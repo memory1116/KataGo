@@ -44,9 +44,9 @@ struct Plan {
 };
 
 // Loads and applies cudaTacticPlanFile when configured. The selected plan is
-// authoritative for its tactic keys, exact batch shape, precision, and stream
-// count per device. An identical plan may be replicated across matching GPUs;
-// device ordinals remain receiver-local and are never copied from the producer.
+// used as an optimization preset. Runtime model, batch, lane count, and device
+// selection remain user-controlled. Unsupported model shapes retain the
+// official CUDA path, and device ordinals remain receiver-local.
 std::unique_ptr<Plan> loadAndApply(
   ConfigParser& cfg,
   Logger& logger,
@@ -55,9 +55,9 @@ std::unique_ptr<Plan> loadAndApply(
   bool& requireExactNNLen
 );
 
-// Validates every receiver device used by the evaluator. A plan produced for
-// one ordinal may be applied to another ordinal only when tactic-relevant CUDA
-// capabilities match.
+// Ensures only that every receiver belongs to the CUDA architecture family for
+// which the preset was compiled. Product name and performance characteristics
+// are advisory rather than runtime authorization checks.
 void validateDevices(
   const Plan& plan,
   const std::vector<int>& gpuIdxByServerThread

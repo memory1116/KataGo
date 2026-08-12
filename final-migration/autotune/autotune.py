@@ -63,16 +63,49 @@ def config_string(values: dict[str, object]) -> str:
 
 
 def common_cmake(prefix: pathlib.Path) -> list[str]:
-    return [
-        f"-DCMAKE_CUDA_COMPILER={prefix / 'cuda/bin/nvcc'}",
-        f"-DCUDNN_INCLUDE_DIR={prefix / 'cudnn/include'}",
-        f"-DCUDNN_LIBRARY={prefix / 'cudnn/lib/libcudnn.so'}",
-        f"-DZLIB_INCLUDE_DIR={prefix / 'native/include'}",
-        f"-DZLIB_LIBRARY={prefix / 'native/lib/libz.so'}",
-        f"-DKATAGO_TILELANG_ROOT={prefix / 'sources/TileLang'}",
-        f"-DKATAGO_CUTLASS_ROOT={prefix / 'sources/cutlass'}",
-        "-DNO_GIT_REVISION=1",
-    ]
+    args = ["-DNO_GIT_REVISION=1"]
+    nvcc = os.environ.get("CMAKE_CUDA_COMPILER") or os.environ.get("CUDACXX")
+    bundled_nvcc = prefix / "cuda/bin/nvcc"
+    if nvcc:
+        args.append(f"-DCMAKE_CUDA_COMPILER={nvcc}")
+    elif bundled_nvcc.is_file():
+        args.append(f"-DCMAKE_CUDA_COMPILER={bundled_nvcc}")
+    cudnn_root = pathlib.Path(os.environ.get("CUDNN_ROOT", prefix / "cudnn"))
+    if (cudnn_root / "include/cudnn.h").is_file():
+        args.append(f"-DCUDNN_INCLUDE_DIR={cudnn_root / 'include'}")
+    for library in (cudnn_root / "lib/libcudnn.so", cudnn_root / "lib64/libcudnn.so"):
+        if library.is_file():
+            args.append(f"-DCUDNN_LIBRARY={library}")
+            break
+    native = prefix / "native"
+    if (native / "include/zlib.h").is_file() and (native / "lib/libz.so").is_file():
+        args.extend([
+            f"-DZLIB_INCLUDE_DIR={native / 'include'}",
+            f"-DZLIB_LIBRARY={native / 'lib/libz.so'}",
+        ])
+    tilelang = pathlib.Path(os.environ.get("KATAGO_TILELANG_ROOT", prefix / "sources/TileLang"))
+    cutlass = pathlib.Path(os.environ.get("KATAGO_CUTLASS_ROOT", prefix / "sources/cutlass"))
+    if tilelang.is_dir():
+        args.append(f"-DKATAGO_TILELANG_ROOT={tilelang}")
+    if cutlass.is_dir():
+        args.append(f"-DKATAGO_CUTLASS_ROOT={cutlass}")
+    return args
+
+
+def sm8x_flash_root(prefix: pathlib.Path) -> pathlib.Path:
+    return pathlib.Path(os.environ.get(
+        "SM89_FLASH_ATTN_ROOT", prefix / "sources/flash-attention",
+    )).resolve()
+
+
+def nvcc_path(prefix: pathlib.Path) -> str:
+    configured = os.environ.get("CMAKE_CUDA_COMPILER") or os.environ.get("CUDACXX")
+    if configured:
+        return configured
+    bundled = prefix / "cuda/bin/nvcc"
+    if bundled.is_file():
+        return str(bundled)
+    return "nvcc"
 
 
 def classify_device(result: dict[str, Any]) -> dict[str, str]:
@@ -261,7 +294,7 @@ def prepare_baseline_prescan_binary(
     ]
     if architecture in SM8X_WORKFLOWS:
         configure.append(
-            f"-DSM89_FLASH_ATTN_ROOT={prefix / 'sources/flash-attention'}"
+            f"-DSM89_FLASH_ATTN_ROOT={sm8x_flash_root(prefix)}"
         )
     if not binary.is_file() or args.force:
         run(configure, cwd=repo, env=env)
@@ -369,7 +402,7 @@ def sm8x_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: 
                    "--space", str(space), "--family", family,
                    "--batches", args.batches, "--device", str(args.device),
                    "--output-dir", str(target), "--python", str(python),
-                   "--nvcc", str(paths["prefix"] / "cuda/bin/nvcc"),
+                   "--nvcc", nvcc_path(paths["prefix"]),
                    "--compile-objects"]
         if not args.force:
             command.append("--reuse-existing")
@@ -390,7 +423,7 @@ def sm8x_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: 
         "cmake", "-S", str(repo / "cpp"), "-B", str(build), "-G", "Ninja",
         "-DUSE_BACKEND=CUDA", "-DCMAKE_BUILD_TYPE=Release",
         f"-DKATAGO_CUDA_ARCHITECTURES={CUDA_ARCHITECTURE_DIGITS[architecture]}",
-        f"-DSM89_FLASH_ATTN_ROOT={paths['prefix'] / 'sources/flash-attention'}",
+        f"-DSM89_FLASH_ATTN_ROOT={sm8x_flash_root(paths['prefix'])}",
         f"-DSM89_TACTIC_TILELANG_ROOT={tilelang_root}",
         f"-DSM89_SEARCH_DUAL_FFN_FAT_REGISTRY={dual_manifest['registry_source']}",
         f"-DSM89_SEARCH_DUAL_FFN_FAT_SOURCES={';'.join(dual_manifest['sources'])}",
@@ -788,6 +821,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prefix", type=pathlib.Path)
     parser.add_argument("--repo", type=pathlib.Path)
+    parser.add_argument("--python", type=pathlib.Path)
+    parser.add_argument("--model", type=pathlib.Path)
     parser.add_argument("--output-dir", type=pathlib.Path)
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument("--batches", default="4-32")
@@ -872,10 +907,11 @@ def main() -> int:
         args.prefix = pathlib.Path(pointer.read_text().strip()) if pointer.exists() else script_dir / "runtime"
     prefix = args.prefix.resolve()
     repo = (args.repo or prefix / "repo").resolve()
-    python = prefix / "venv/bin/python"
-    model = prefix / "assets/b11c768h12nbt3tflrs-fson-silu.bin.gz"
-    for path, label in ((python, "configured Python"), (model, "model")):
-        ensure_file(path, label)
+    python = (args.python or pathlib.Path(sys.executable)).resolve()
+    model = (args.model or prefix / "assets/b11c768h12nbt3tflrs-fson-silu.bin.gz").resolve()
+    ensure_file(python, "Python interpreter")
+    if args.phase not in ("detect", "prepare"):
+        ensure_file(model, "model (pass --model to choose one)")
     hardware = detect(repo, args.device)
     requested_batches = args.batches
     mode = "full" if args.full_batch_scan else f"top{args.top_batches}"
@@ -890,14 +926,17 @@ def main() -> int:
         return 0
     env = dict(os.environ)
     env.update({
-        "AUTOTUNE_PREFIX": str(prefix), "CUDA_HOME": str(prefix / "cuda"),
-        "CUDA_PATH": str(prefix / "cuda"), "CUDNN_ROOT": str(prefix / "cudnn"),
-        "PATH": f"{prefix / 'venv/bin'}:{prefix / 'cuda/bin'}:{env.get('PATH', '')}",
-        "LD_LIBRARY_PATH": f"{prefix / 'cudnn/lib'}:{prefix / 'cuda/lib64'}:{prefix / 'native/lib'}:{env.get('LD_LIBRARY_PATH', '')}",
-        "CMAKE_PREFIX_PATH": f"{prefix / 'native'}:{env.get('CMAKE_PREFIX_PATH', '')}",
+        "AUTOTUNE_PREFIX": str(prefix),
+        "PATH": f"{python.parent}:{env.get('PATH', '')}",
         "XDG_CACHE_HOME": str(prefix / "cache"),
         "CMAKE_BUILD_PARALLEL_LEVEL": str(args.jobs), "MAX_JOBS": str(args.jobs),
     })
+    if (prefix / "cuda").is_dir():
+        env.setdefault("CUDA_HOME", str(prefix / "cuda"))
+        env.setdefault("CUDA_PATH", str(prefix / "cuda"))
+        env["PATH"] = f"{prefix / 'cuda/bin'}:{env['PATH']}"
+    if (prefix / "cudnn").is_dir():
+        env.setdefault("CUDNN_ROOT", str(prefix / "cudnn"))
     paths = {"prefix": prefix, "repo": repo, "python": python, "model": model,
              "out": out, "gpu_class": pathlib.Path(hardware["gpu_class"]),
              "workflow": pathlib.Path(hardware["workflow"])}

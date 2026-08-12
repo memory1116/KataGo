@@ -297,31 +297,25 @@ class AutotuneEntrypointTests(unittest.TestCase):
         self.assertNotIn('"gate"', helper)
         self.assertNotIn('"accuracy"', helper)
 
-    def test_plan_registry_uses_cuda_product_as_unique_key(self) -> None:
-        def plan(name: str) -> dict[str, object]:
-            return {
-                "target": {
-                    "cuda_device_capabilities_at_scan": [{"name": name}],
-                },
-            }
+    def test_plan_registry_uses_cuda_architecture_not_product_name(self) -> None:
+        def plan(architecture: str) -> dict[str, object]:
+            return {"target": {"architecture": architecture}}
 
-        selected = BUILD_FOR_PLAN.select_product_plan(
-            [(pathlib.Path("5080.json"), plan("NVIDIA GeForce RTX 5080"))],
-            "NVIDIA GeForce RTX 5080",
+        selected = BUILD_FOR_PLAN.select_architecture_plan(
+            [(pathlib.Path("sm86.json"), plan("sm86"))], "sm86",
         )
-        self.assertEqual(selected[0], pathlib.Path("5080.json"))
+        self.assertEqual(selected[0], pathlib.Path("sm86.json"))
         with self.assertRaisesRegex(RuntimeError, "no bundled plan"):
-            BUILD_FOR_PLAN.select_product_plan(
-                [(pathlib.Path("5080.json"), plan("NVIDIA GeForce RTX 5080"))],
-                "NVIDIA GeForce RTX 5090 D",
+            BUILD_FOR_PLAN.select_architecture_plan(
+                [(pathlib.Path("sm86.json"), plan("sm86"))], "sm89",
             )
         with self.assertRaisesRegex(RuntimeError, "multiple plan entries"):
-            BUILD_FOR_PLAN.select_product_plan(
+            BUILD_FOR_PLAN.select_architecture_plan(
                 [
-                    (pathlib.Path("a.json"), plan("NVIDIA GeForce RTX 5080")),
-                    (pathlib.Path("b.json"), plan("NVIDIA GeForce RTX 5080")),
+                    (pathlib.Path("a.json"), plan("sm86")),
+                    (pathlib.Path("b.json"), plan("sm86")),
                 ],
-                "NVIDIA GeForce RTX 5080",
+                "sm86",
             )
 
     def test_parse_batch_set(self) -> None:

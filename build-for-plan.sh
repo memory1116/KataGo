@@ -17,13 +17,8 @@ fi
 if [[ -z "${prefix}" && -d "${SCRIPT_DIR}/.final-migration-env" ]]; then
   prefix="${SCRIPT_DIR}/.final-migration-env"
 fi
-[[ -n "${prefix}" && -x "${prefix}/venv/bin/python" ]] || {
-  printf '[build-for-plan] ERROR: environment missing; run ./setup.sh first\n' >&2
-  exit 1
-}
-
-repo="${prefix}/repo"
-[[ -r "${repo}/python/cuda_tactic_workflow.py" ]] || repo="${SCRIPT_DIR}"
+repo="${prefix:+${prefix}/repo}"
+[[ -n "${repo}" && -r "${repo}/python/cuda_tactic_workflow.py" ]] || repo="${SCRIPT_DIR}"
 helper="${SCRIPT_DIR}/build_for_plan.py"
 autotune="${SCRIPT_DIR}/autotune.py"
 if [[ ! -r "${helper}" ]]; then
@@ -37,9 +32,26 @@ fi
   exit 1
 }
 
+python="${KATAGO_PYTHON:-}"
+if [[ -z "${python}" && -n "${prefix}" && -x "${prefix}/venv/bin/python" ]]; then
+  python="${prefix}/venv/bin/python"
+fi
+if [[ -z "${python}" ]]; then
+  python="$(command -v python3 || command -v python || true)"
+fi
+[[ -n "${python}" && -x "${python}" ]] || {
+  printf '[build-for-plan] ERROR: Python 3 is missing; set KATAGO_PYTHON\n' >&2
+  exit 1
+}
+
+if [[ -z "${prefix}" ]]; then
+  prefix="${SCRIPT_DIR}/.final-migration-env"
+fi
+
 declare -a command=(
-  "${prefix}/venv/bin/python" "${helper}"
+  "${python}" "${helper}"
   --prefix "${prefix}" --repo "${repo}" --autotune "${autotune}"
+  --python "${python}"
 )
 for root in "${SCRIPT_DIR}/plans" "${repo}/final-migration/plans"; do
   if [[ -d "${root}" ]]; then

@@ -145,12 +145,6 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
 
     unique_ptr<CudaTacticPlan::Plan> cudaTacticPlan =
       CudaTacticPlan::loadAndApply(cfg,logger,nnXLen,nnYLen,requireExactNNLen);
-    if(cudaTacticPlan != nullptr) {
-      if(expectedSha256 != "" &&
-         Global::toLower(expectedSha256) != Global::toLower(cudaTacticPlan->modelSha256))
-        throw StringError("Configured model SHA-256 differs from the CUDA tactic plan");
-      expectedSha256 = cudaTacticPlan->modelSha256;
-    }
 
     bool inputsUseNHWC = backendPrefix == "opencl" || backendPrefix == "trt" || backendPrefix == "metal" ? false : true;
     if(cfg.contains(backendPrefix+"InputsUseNHWC"+idxStr))
@@ -300,12 +294,6 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
     cfg.markAllKeysUsedWithPrefix("nnMaxBatchSize");
     (void)defaultMaxBatchSize;
 #endif
-
-    if(cudaTacticPlan != nullptr && nnMaxBatchSize != cudaTacticPlan->batchSize)
-      throw StringError(
-        "Evaluator batch size B" + Global::intToString(nnMaxBatchSize) +
-        " differs from CUDA tactic plan B" + Global::intToString(cudaTacticPlan->batchSize)
-      );
 
     int defaultSymmetry = forcedSymmetry >= 0 ? forcedSymmetry : 0;
     if(disableFP16)

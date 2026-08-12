@@ -103,6 +103,9 @@ struct Options {
   std::string dualFfnAotTactic = "disabled";
   std::string linear2AotTactic = "disabled";
   int serverThreads = 1;
+  // The plan mapping may have been measured at one exact batch. A different
+  // physical batch remains valid and uses the official CUDA fallback.
+  int tacticBatch = 0;
 };
 
 bool isSm89Arch(int majorComputeCapability, int minorComputeCapability);
@@ -169,6 +172,7 @@ class Sm89Model {
   const bool inputsUseNHWC;
   const bool useFP16;
   const bool useNHWC;
+  cudaStream_t stream;
   Options options;
   Logger* logger;
   bool loggedFallback;

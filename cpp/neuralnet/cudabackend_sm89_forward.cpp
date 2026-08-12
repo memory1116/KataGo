@@ -2973,6 +2973,20 @@ bool Sm89Forward::supports(const ModelDesc& desc, bool useFP16, bool useNHWC) {
       int kind = b->blocks[j].first;
       if(kind != TRANSFORMER_ATTENTION_BLOCK_KIND && kind != TRANSFORMER_FFN_BLOCK_KIND)
         return false;
+      if(kind == TRANSFORMER_ATTENTION_BLOCK_KIND) {
+        const TransformerAttentionDesc* attention =
+          (const TransformerAttentionDesc*)b->blocks[j].second.get();
+        if(attention->qProj.inChannels != 384 || attention->numHeads != 12 ||
+           attention->numKVHeads != 12 || attention->qHeadDim != 32 ||
+           attention->vHeadDim != 32)
+          return false;
+      }
+      else {
+        const TransformerFFNDesc* ffn =
+          (const TransformerFFNDesc*)b->blocks[j].second.get();
+        if(ffn->numChannels != 384 || ffn->ffnChannels != 1152 || !ffn->useSwiGLU)
+          return false;
+      }
     }
   }
   return true;

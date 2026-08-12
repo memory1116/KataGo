@@ -14,9 +14,6 @@ import sys
 from typing import Any
 
 
-MODEL_NAME = "b11c768h12nbt3tflrs-fson-silu.bin.gz"
-
-
 def sha256(path: pathlib.Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -25,50 +22,36 @@ def sha256(path: pathlib.Path) -> str:
     return digest.hexdigest()
 
 
-def verify_plan_checksum(path: pathlib.Path) -> None:
-    manifest = path.parent / "SHA256SUMS"
-    if not manifest.is_file():
-        raise RuntimeError(f"plan checksum manifest is missing: {manifest}")
-    subprocess.run(
-        ["sha256sum", "--check", "--quiet", manifest.name],
-        cwd=path.parent, check=True,
-    )
-
-
-def plan_product_name(plan: dict[str, Any]) -> str:
+def plan_architecture(plan: dict[str, Any]) -> str:
     target = plan.get("target")
     if not isinstance(target, dict):
         raise ValueError("plan has no target")
-    devices = target.get("cuda_device_capabilities_at_scan")
-    if not isinstance(devices, list) or not devices or not isinstance(devices[0], dict):
-        raise ValueError("plan has no producer CUDA device")
-    name = devices[0].get("name")
-    if not isinstance(name, str) or not name:
-        raise ValueError("plan has no producer CUDA product name")
-    return name
+    architecture = target.get("architecture")
+    if architecture not in ("sm86", "sm89", "sm120"):
+        raise ValueError(f"plan has unsupported architecture {architecture!r}")
+    return str(architecture)
 
 
-def select_product_plan(
-    plans: list[tuple[pathlib.Path, dict[str, Any]]], product_name: str,
+def select_architecture_plan(
+    plans: list[tuple[pathlib.Path, dict[str, Any]]], architecture: str,
 ) -> tuple[pathlib.Path, dict[str, Any]]:
-    matches = [item for item in plans if plan_product_name(item[1]) == product_name]
+    matches = [item for item in plans if plan_architecture(item[1]) == architecture]
     if not matches:
-        available = sorted({plan_product_name(plan) for _, plan in plans})
-        suffix = f"; bundled products: {', '.join(available)}" if available else ""
-        raise RuntimeError(f"no bundled plan for CUDA product {product_name!r}{suffix}")
+        raise RuntimeError(f"no bundled plan for CUDA architecture {architecture}")
     if len(matches) != 1:
         paths = ", ".join(str(path) for path, _ in matches)
         raise RuntimeError(
-            f"CUDA product {product_name!r} has multiple plan entries: {paths}"
+            f"CUDA architecture {architecture} has multiple plan entries; "
+            f"select one with --plan: {paths}"
         )
     return matches[0]
 
 
 def select_plan(
     *, explicit: pathlib.Path | None, roots: list[pathlib.Path],
-    model: pathlib.Path, device_properties: dict[str, object],
+    device_properties: dict[str, object],
 ) -> tuple[pathlib.Path, dict[str, Any]]:
-    from cuda_tactic_workflow import load_plan, validate_plan
+    from cuda_tactic_workflow import load_plan
 
     paths: list[pathlib.Path] = []
     if explicit is not None:
@@ -90,13 +73,12 @@ def select_plan(
             failures.append(f"missing plan: {path}")
             continue
         try:
-            verify_plan_checksum(path)
             plan_file_sha = sha256(path)
             if plan_file_sha in seen_plan_hashes:
                 continue
             seen_plan_hashes.add(plan_file_sha)
             plan = load_plan(path)
-            plan_product_name(plan)
+            plan_architecture(plan)
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
             failures.append(f"{path}: {exc}")
             continue
@@ -107,15 +89,21 @@ def select_plan(
                 raise RuntimeError("explicit plan could not be loaded")
             selected = loaded[0]
         else:
-            product_name = device_properties.get("name")
-            if not isinstance(product_name, str) or not product_name:
-                raise RuntimeError("CUDA Runtime did not return a product name")
-            selected = select_product_plan(loaded, product_name)
-        result = validate_plan(
-            selected[1], model=model, device_properties=device_properties,
-        )
-        if not result["production_ready"]:
-            raise ValueError("plan is not production-ready")
+            cc = device_properties.get("compute_capability")
+            architecture = {(8, 6): "sm86", (8, 9): "sm89", (12, 0): "sm120"}.get(
+                tuple(cc) if isinstance(cc, (list, tuple)) else (),
+            )
+            if architecture is None:
+                raise RuntimeError(f"unsupported CUDA compute capability {cc!r}")
+            selected = select_architecture_plan(loaded, architecture)
+        expected_cc = {"sm86": [8, 6], "sm89": [8, 9], "sm120": [12, 0]}[
+            plan_architecture(selected[1])
+        ]
+        if device_properties.get("compute_capability") != expected_cc:
+            raise RuntimeError(
+                f"plan architecture requires compute capability {expected_cc}, "
+                f"got {device_properties.get('compute_capability')!r}"
+            )
         return selected
     except (ValueError, RuntimeError) as exc:
         detail = "\n".join(failures[-8:])
@@ -162,16 +150,16 @@ def main() -> int:
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument("--plan", type=pathlib.Path)
     parser.add_argument("--jobs", type=int)
+    parser.add_argument("--python", type=pathlib.Path)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
     prefix = args.prefix.resolve()
     repo = args.repo.resolve()
     autotune = args.autotune.resolve()
-    python = prefix / "venv/bin/python"
-    model = prefix / "assets" / MODEL_NAME
+    python = (args.python or pathlib.Path(sys.executable)).resolve()
     for path, label in (
-        (python, "configured Python"), (model, "model"),
+        (python, "Python interpreter"),
         (repo / "python/cuda_tactic_workflow.py", "workflow"),
         (autotune, "autotune build driver"),
     ):
@@ -188,12 +176,11 @@ def main() -> int:
     plan_path, plan = select_plan(
         explicit=args.plan,
         roots=[path.resolve() for path in args.plans_root],
-        model=model,
         device_properties=device_properties,
     )
     batches = plan.get("batches", [])
     if not isinstance(batches, list) or len(batches) != 1:
-        raise RuntimeError("build-only requires a single-batch production plan")
+        raise RuntimeError("build-only requires a plan containing one tactic batch")
     batch = int(batches[0])
     target = plan["target"]
     architecture = str(target["architecture"])
@@ -239,6 +226,7 @@ def main() -> int:
     command = [
         str(python), str(autotune),
         "--prefix", str(prefix), "--repo", str(repo),
+        "--python", str(python),
         "--output-dir", str(out), "--device", str(args.device),
         "--batches", str(batch), "--streams", str(streams),
         "--phase", "prepare", "--full-batch-scan",

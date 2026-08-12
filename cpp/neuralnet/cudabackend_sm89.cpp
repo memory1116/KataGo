@@ -197,6 +197,8 @@ Options parseOptions(ConfigParser& cfg) {
     cfg.getString("cudaLinear2AotTacticSm89") : "disabled";
   o.serverThreads = cfg.contains("numNNServerThreadsPerModel") ?
     cfg.getInt("numNNServerThreadsPerModel",1,1024) : 1;
+  o.tacticBatch = cfg.contains("cudaTacticPlanBatch") ?
+    cfg.getInt("cudaTacticPlanBatch",1,65536) : 0;
   return o;
 }
 
@@ -224,6 +226,7 @@ Sm89Model::Sm89Model(
   inputsUseNHWC(inputsUseNHWC_),
   useFP16(useFP16_),
   useNHWC(useNHWC_),
+  stream(stream),
   options(options_),
   logger(NULL),
   loggedFallback(false),
@@ -233,9 +236,8 @@ Sm89Model::Sm89Model(
 {
   if(officialApplyContext == NULL || officialApply == NULL || cudaHandles == NULL || desc == NULL)
     throw StringError("Sm89Model: null construction argument");
-  if(nnXLen != 19 || nnYLen != 19)
-    throw StringError("SM89 optimized backend supports only exact 19x19 inference");
-  if(options.useForward && Sm89Forward::supports(*desc, useFP16, useNHWC)) {
+  if(nnXLen == 19 && nnYLen == 19 &&
+     options.useForward && Sm89Forward::supports(*desc, useFP16, useNHWC)) {
     const PersistingL2Plan persistingL2 =
       (options.usePersistingL2Trunk || options.usePersistingL2Inner)
       ? reservePersistingL2(
@@ -325,10 +327,10 @@ void Sm89Model::apply(
   (void)workspaceBuf;
   (void)workspaceBytes;
 
-  if(!requireExactNNLen)
-    throw StringError("SM89 optimized backend supports only exact 19x19 inference");
-
-  if(forwardActive) {
+  const bool usesExactBatchAot =
+    options.dualFfnAotTactic != "disabled" || options.linear2AotTactic != "disabled";
+  if(forwardActive && requireExactNNLen &&
+     (!usesExactBatchAot || options.tacticBatch <= 0 || batchSize == options.tacticBatch)) {
     forward->apply(
       batchSize,
       inputBuf,
@@ -361,8 +363,8 @@ void Sm89Model::apply(
 
   // The specialized forward rejected this model at construction, so use the
   // explicit whole-model compatibility path.
-  if(inputConsumedEvent != nullptr || outputConsumedEvent != nullptr)
-    throw StringError("SM89 event-gated inference requires the custom forward path");
+  if(outputConsumedEvent != nullptr)
+    CUDA_ERR("Sm89Model",cudaStreamWaitEvent(stream,outputConsumedEvent,0));
   officialApply(
     officialApplyContext,
     cudaHandles,
@@ -380,6 +382,8 @@ void Sm89Model::apply(
     workspaceBuf,
     workspaceBytes
   );
+  if(inputConsumedEvent != nullptr)
+    CUDA_ERR("Sm89Model",cudaEventRecord(inputConsumedEvent,stream));
 }
 
 } // namespace Sm89Backend

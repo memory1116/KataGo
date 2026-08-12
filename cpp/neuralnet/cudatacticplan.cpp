@@ -41,30 +41,6 @@ uint64_t requiredUint64(const json& obj, const string& key, const string& contex
   return obj[key].get<uint64_t>();
 }
 
-void requireConfigBool(ConfigParser& cfg, const string& key, bool required) {
-  if(cfg.contains(key) && cfg.getBool(key) != required)
-    throw StringError(
-      "CUDA tactic plan requires " + key + "=" + (required ? "true" : "false")
-    );
-}
-
-void requireConfigEnabled(ConfigParser& cfg, const string& key, bool required) {
-  if(!cfg.contains(key))
-    return;
-  const enabled_t value = cfg.getEnabled(key);
-  if((required && value == enabled_t::False) || (!required && value == enabled_t::True))
-    throw StringError(
-      "CUDA tactic plan requires " + key + "=" + (required ? "true" : "false")
-    );
-}
-
-void requireConfigInt(ConfigParser& cfg, const string& key, int required) {
-  if(cfg.contains(key) && cfg.getInt(key) != required)
-    throw StringError(
-      "CUDA tactic plan requires " + key + "=" + Global::intToString(required)
-    );
-}
-
 DeviceRequirements parseDeviceRequirements(const json& target) {
   if(!target.contains("cuda_device_capabilities_at_scan") ||
      !target["cuda_device_capabilities_at_scan"].is_array() ||
@@ -102,8 +78,6 @@ int selectBatch(ConfigParser& cfg, const json& payload) {
   int batch = -1;
   if(cfg.contains("cudaTacticPlanBatch"))
     batch = cfg.getInt("cudaTacticPlanBatch",1,65536);
-  else if(cfg.contains("nnMaxBatchSize"))
-    batch = cfg.getInt("nnMaxBatchSize",1,65536);
   else if(batches.size() == 1)
     batch = *batches.begin();
   else
@@ -115,20 +89,6 @@ int selectBatch(ConfigParser& cfg, const json& payload) {
       "CUDA tactic plan has no certified B" + Global::intToString(batch) + " selection"
     );
   return batch;
-}
-
-void validateCertifiedBatch(const json& payload, int batch) {
-  const string batchKey = Global::intToString(batch);
-  if(!payload.contains("final_joint") || !payload["final_joint"].is_object() ||
-     !payload["final_joint"].contains(batchKey) ||
-     !payload["final_joint"][batchKey].is_object())
-    throw StringError("CUDA tactic plan has no final joint B" + batchKey + " evidence");
-  const json& joint = payload["final_joint"][batchKey];
-  if(requiredString(joint,"measurement_kind","final joint") != "long_stable")
-    throw StringError("CUDA tactic plan B" + batchKey + " is not long-stable");
-  if(!joint.contains("correctness") || !joint["correctness"].is_object() ||
-     requiredString(joint["correctness"],"status","correctness") != "passed")
-    throw StringError("CUDA tactic plan B" + batchKey + " lacks passed correctness evidence");
 }
 
 map<string,string> parseTacticOverrides(const json& payload, int batch) {
@@ -154,64 +114,6 @@ map<string,string> parseTacticOverrides(const json& payload, int batch) {
   return overrides;
 }
 
-map<string,bool> parseRuntimeConfig(const json& target, bool required) {
-  static const set<string> allowedKeys = {
-    "cudaUseFP16",
-    "cudaUseGraphInference",
-    "cudaUseNHWC",
-    "cudaWarmupOnlyMaxBatchSize",
-    "nnBatchAwareDispatch",
-  };
-  if(!target.contains("runtime_config")) {
-    if(required)
-      throw StringError("CUDA tactic plan has no certified runtime execution contract");
-    return map<string,bool>();
-  }
-  const json& config = target["runtime_config"];
-  if(!config.is_object() || config.size() != allowedKeys.size())
-    throw StringError("CUDA tactic plan runtime execution contract is malformed");
-  map<string,bool> result;
-  for(const string& key : allowedKeys) {
-    if(!config.contains(key) || !config[key].is_boolean())
-      throw StringError("CUDA tactic plan runtime execution contract requires boolean " + key);
-    result[key] = config[key].get<bool>();
-  }
-  for(auto iter = config.begin(); iter != config.end(); ++iter) {
-    if(allowedKeys.find(iter.key()) == allowedKeys.end())
-      throw StringError("CUDA tactic plan runtime execution contract contains unknown key " + iter.key());
-  }
-  return result;
-}
-
-void requireSameInt(const string& label, int expected, int actual, int deviceIdx) {
-  if(actual != expected) {
-    throw StringError(
-      "CUDA tactic plan device " + Global::intToString(deviceIdx) + " " + label +
-      " mismatch: expected " + Global::intToString(expected) +
-      ", got " + Global::intToString(actual)
-    );
-  }
-}
-
-void requireSameUint64(const string& label, uint64_t expected, uint64_t actual, int deviceIdx) {
-  if(actual != expected) {
-    throw StringError(
-      "CUDA tactic plan device " + Global::intToString(deviceIdx) + " " + label +
-      " mismatch: expected " + Global::uint64ToString(expected) +
-      ", got " + Global::uint64ToString(actual)
-    );
-  }
-}
-
-void requireSameString(const string& label, const string& expected, const string& actual, int deviceIdx) {
-  if(actual != expected) {
-    throw StringError(
-      "CUDA tactic plan device " + Global::intToString(deviceIdx) + " " + label +
-      " mismatch: expected " + expected + ", got " + actual
-    );
-  }
-}
-
 }
 
 unique_ptr<Plan> loadAndApply(
@@ -230,6 +132,9 @@ unique_ptr<Plan> loadAndApply(
   (void)requireExactNNLen;
   throw StringError("cudaTacticPlanFile requires a CUDA backend build");
 #else
+  (void)nnXLen;
+  (void)nnYLen;
+  (void)requireExactNNLen;
   const string path = cfg.getString("cudaTacticPlanFile");
   string contents;
   string fileSha256;
@@ -245,14 +150,9 @@ unique_ptr<Plan> loadAndApply(
   if(!payload.is_object() || requiredInt(payload,"schema","root") != 1 ||
      requiredString(payload,"kind","root") != "cuda-tactic-plan")
     throw StringError("Unsupported CUDA tactic plan schema in " + path);
-  if(!requiredBool(payload,"ready_for_scan_bypass","root") ||
-     !requiredBool(payload,"production_ready","root") ||
-     requiredString(payload,"status","root") != "complete_long_stable")
-    throw StringError("CUDA tactic plan is not production-ready: " + path);
-  if(!payload.contains("positive_history_closure") ||
-     !payload["positive_history_closure"].is_object() ||
-     !requiredBool(payload["positive_history_closure"],"complete","history closure"))
-    throw StringError("CUDA tactic plan has incomplete positive-history closure");
+  if(!payload.value("production_ready",false) ||
+     payload.value("status",string()) != "complete_long_stable")
+    logger.write("WARNING: loading an uncertified CUDA tactic preset from " + path);
 
   if(!payload.contains("target") || !payload["target"].is_object())
     throw StringError("CUDA tactic plan has no target");
@@ -260,67 +160,32 @@ unique_ptr<Plan> loadAndApply(
   const string architecture = requiredString(target,"architecture","target");
   if(architecture != "sm86" && architecture != "sm89" && architecture != "sm120")
     throw StringError("Unsupported CUDA tactic plan architecture " + architecture);
-  if(!target.contains("fixed_board") || target["fixed_board"] != json::array({19,19}))
-    throw StringError("CUDA tactic plans currently require an exact 19x19 board");
-  if(nnXLen != 19 || nnYLen != 19)
-    throw StringError("CUDA tactic plan requires an exact 19x19 evaluator");
-  if(requiredString(target,"precision","target") != "FP16/NHWC")
-    throw StringError("CUDA tactic plan requires FP16/NHWC precision");
-
   const int batch = selectBatch(cfg,payload);
   const int streams = requiredInt(target,"streams","target");
   if(streams <= 0)
     throw StringError("CUDA tactic plan target stream count must be positive");
   const int evaluatorThreads = cfg.contains("numNNServerThreadsPerModel") ?
     cfg.getInt("numNNServerThreadsPerModel",1,65536) : streams;
-  if(evaluatorThreads % streams != 0)
-    throw StringError(
-      "CUDA tactic plan requires exactly " + Global::intToString(streams) +
-      " NN server threads per device"
-    );
-  validateCertifiedBatch(payload,batch);
   map<string,string> tacticOverrides = parseTacticOverrides(payload,batch);
-  const map<string,bool> runtimeConfig = parseRuntimeConfig(target,architecture == "sm86");
-  const bool hasRuntimeConfig = !runtimeConfig.empty();
 
-  requireConfigInt(cfg,"nnMaxBatchSize",batch);
-  requireConfigBool(cfg,"requireMaxBoardSize",true);
-  if(hasRuntimeConfig) {
-    for(const auto& item : runtimeConfig) {
-      if(item.first == "cudaUseFP16" || item.first == "cudaUseNHWC")
-        requireConfigEnabled(cfg,item.first,item.second);
-      else
-        requireConfigBool(cfg,item.first,item.second);
-    }
+  map<string,string> runtimeOverrides;
+  // The preset supplies tactic choices only. Model, physical batch, lane count,
+  // precision, layout, graph, and scheduler settings belong to the user. The
+  // specialized backend already falls back to the official implementation
+  // when a model does not support its optimized forward.
+  for(const auto& item : tacticOverrides) {
+    if(!cfg.contains(item.first))
+      runtimeOverrides[item.first] = item.second;
   }
-  else {
-    requireConfigBool(cfg,"nnBatchAwareDispatch",true);
-    requireConfigBool(cfg,"cudaWarmupOnlyMaxBatchSize",true);
-    if(cfg.contains("useFP16") && cfg.getEnabled("useFP16") == enabled_t::False)
-      throw StringError("CUDA tactic plan requires useFP16=true");
-    if(cfg.contains("cudaUseNHWC") && cfg.getEnabled("cudaUseNHWC") == enabled_t::False)
-      throw StringError("CUDA tactic plan requires cudaUseNHWC=true");
-  }
-  requireExactNNLen = true;
-
-  map<string,string> runtimeOverrides = tacticOverrides;
-  runtimeOverrides["nnMaxBatchSize"] = Global::intToString(batch);
-  runtimeOverrides["numNNServerThreadsPerModel"] = Global::intToString(evaluatorThreads);
-  if(hasRuntimeConfig) {
-    for(const auto& item : runtimeConfig)
-      runtimeOverrides[item.first] = item.second ? "true" : "false";
-  }
-  else {
-    runtimeOverrides["nnBatchAwareDispatch"] = "true";
-    runtimeOverrides["cudaWarmupOnlyMaxBatchSize"] = "true";
-    runtimeOverrides["useFP16"] = "true";
-    runtimeOverrides["cudaUseNHWC"] = "true";
-  }
+  if(!cfg.contains("cudaTacticPlanBatch"))
+    runtimeOverrides["cudaTacticPlanBatch"] = Global::intToString(batch);
   if(architecture == "sm86" || architecture == "sm89") {
-    runtimeOverrides["cudaSm89Backend"] = "true";
-    runtimeOverrides["cudaSm89Forward"] = "true";
+    if(!cfg.contains("cudaSm89Backend"))
+      runtimeOverrides["cudaSm89Backend"] = "true";
+    if(!cfg.contains("cudaSm89Forward"))
+      runtimeOverrides["cudaSm89Forward"] = "true";
   }
-  else
+  else if(!cfg.contains("cudaSm120Backend"))
     runtimeOverrides["cudaSm120Backend"] = "true";
   cfg.overrideKeys(runtimeOverrides);
 
@@ -331,9 +196,7 @@ unique_ptr<Plan> loadAndApply(
   plan->planSha256 = requiredString(payload,"plan_sha256","root");
   plan->architecture = architecture;
   plan->gpuClass = requiredString(target,"gpu_class","target");
-  plan->modelSha256 = requiredString(target,"model_sha256","target");
-  if(plan->modelSha256.size() != 64)
-    throw StringError("CUDA tactic plan target model SHA-256 is malformed");
+  plan->modelSha256 = target.value("model_sha256",string());
   plan->batchSize = batch;
   plan->streamsPerDevice = streams;
   plan->device = parseDeviceRequirements(target);
@@ -343,7 +206,10 @@ unique_ptr<Plan> loadAndApply(
     "Loaded CUDA tactic plan " + plan->planId + " from " + path +
     " fileSha256=" + fileSha256 + " B" + Global::intToString(batch) +
     " streamsPerDevice=" + Global::intToString(streams) +
-    " evaluatorThreads=" + Global::intToString(evaluatorThreads)
+    " runtimeBatch=" +
+      (cfg.contains("nnMaxBatchSize") ? Global::intToString(cfg.getInt("nnMaxBatchSize")) : "auto") +
+    " evaluatorThreads=" + Global::intToString(evaluatorThreads) +
+    " (model/device/topology certification metadata is advisory)"
   );
   return plan;
 #endif
@@ -355,34 +221,21 @@ void validateDevices(const Plan& plan, const vector<int>& gpuIdxByServerThread) 
   (void)gpuIdxByServerThread;
   throw StringError("CUDA tactic plan device validation requires a CUDA backend build");
 #else
-  map<int,int> streamsByDevice;
+  set<int> devices;
   for(int deviceIdx : gpuIdxByServerThread)
-    streamsByDevice[deviceIdx < 0 ? 0 : deviceIdx] += 1;
-  for(const auto& item : streamsByDevice) {
-    const int deviceIdx = item.first;
-    if(item.second != plan.streamsPerDevice) {
-      throw StringError(
-        "CUDA tactic plan requires " + Global::intToString(plan.streamsPerDevice) +
-        " streams on device " + Global::intToString(deviceIdx) + ", got " +
-        Global::intToString(item.second)
-      );
-    }
+    devices.insert(deviceIdx < 0 ? 0 : deviceIdx);
+  for(int deviceIdx : devices) {
     cudaDeviceProp prop;
     CUDA_ERR("CUDA tactic plan",cudaGetDeviceProperties(&prop,deviceIdx));
-    requireSameString("GPU name",plan.device.name,string(prop.name),deviceIdx);
-    requireSameInt("compute capability major",plan.device.computeCapabilityMajor,prop.major,deviceIdx);
-    requireSameInt("compute capability minor",plan.device.computeCapabilityMinor,prop.minor,deviceIdx);
-    requireSameInt("SM count",plan.device.multiProcessorCount,prop.multiProcessorCount,deviceIdx);
-    requireSameInt("max threads/block",plan.device.maxThreadsPerBlock,prop.maxThreadsPerBlock,deviceIdx);
-    requireSameInt("max threads/SM",plan.device.maxThreadsPerMultiprocessor,prop.maxThreadsPerMultiProcessor,deviceIdx);
-    requireSameInt("registers/SM",plan.device.regsPerMultiprocessor,prop.regsPerMultiprocessor,deviceIdx);
-    requireSameInt("opt-in shared memory/block",plan.device.sharedMemPerBlockOptin,(int)prop.sharedMemPerBlockOptin,deviceIdx);
-    requireSameInt("shared memory/SM",plan.device.sharedMemPerMultiprocessor,(int)prop.sharedMemPerMultiprocessor,deviceIdx);
-    requireSameInt("L2 size",plan.device.l2CacheSize,prop.l2CacheSize,deviceIdx);
-    requireSameInt("memory bus width",plan.device.memoryBusWidth,prop.memoryBusWidth,deviceIdx);
-    requireSameInt("async engine count",plan.device.asyncEngineCount,prop.asyncEngineCount,deviceIdx);
-    requireSameInt("concurrent kernels",plan.device.concurrentKernels ? 1 : 0,prop.concurrentKernels ? 1 : 0,deviceIdx);
-    requireSameUint64("global memory",plan.device.totalGlobalMem,(uint64_t)prop.totalGlobalMem,deviceIdx);
+    const bool architectureMatches =
+      (plan.architecture == "sm86" && prop.major == 8 && prop.minor == 6) ||
+      (plan.architecture == "sm89" && prop.major == 8 && prop.minor == 9) ||
+      (plan.architecture == "sm120" && prop.major == 12 && prop.minor == 0);
+    if(!architectureMatches)
+      throw StringError(
+        "CUDA tactic preset " + plan.architecture + " cannot run on compute capability " +
+        Global::intToString(prop.major) + "." + Global::intToString(prop.minor)
+      );
   }
 #endif
 }
