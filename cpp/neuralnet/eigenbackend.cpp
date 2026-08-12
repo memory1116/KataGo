@@ -2273,6 +2273,14 @@ struct InputBuffers {
   std::vector<float> globalInput;
   std::vector<float> metaInput;
 
+  // Eigen owns result tensors on the compute handle. These pointers are refreshed
+  // after every forward pass and remain valid until that handle is destroyed.
+  const float* rawPolicyPassResults;
+  const float* rawPolicyResults;
+  const float* rawValueResults;
+  const float* rawScoreValueResults;
+  const float* rawOwnershipResults;
+
   InputBuffers(const LoadedModel* loadedModel, int maxBatchSz, int nnXLen, int nnYLen) {
     const ModelDesc& m = loadedModel->modelDesc;
 
@@ -2299,6 +2307,12 @@ struct InputBuffers {
       metaInput = vector<float>(m.numInputMetaChannels * maxBatchSize);
     else
       metaInput = vector<float>(1);
+
+    rawPolicyPassResults = NULL;
+    rawPolicyResults = NULL;
+    rawValueResults = NULL;
+    rawScoreValueResults = NULL;
+    rawOwnershipResults = NULL;
   }
 
   ~InputBuffers() { }
@@ -2313,6 +2327,20 @@ InputBuffers* NeuralNet::createInputBuffers(const LoadedModel* loadedModel, int 
 }
 void NeuralNet::freeInputBuffers(InputBuffers* inputBuffers) {
   delete inputBuffers;
+}
+
+void NeuralNet::getRawNNOutputs(InputBuffers* inputBuffers, RawNNOutputs& out) {
+  if(inputBuffers->rawPolicyPassResults == NULL)
+    throw StringError("Eigen backend: raw outputs requested before getOutput");
+  out.policyPassResults = inputBuffers->rawPolicyPassResults;
+  out.policyResults = inputBuffers->rawPolicyResults;
+  out.valueResults = inputBuffers->rawValueResults;
+  out.scoreValueResults = inputBuffers->rawScoreValueResults;
+  out.ownershipResults = inputBuffers->rawOwnershipResults;
+  out.numPolicyChannels = inputBuffers->singlePolicyPassResultElts;
+  out.numValueChannels = inputBuffers->singleValueResultElts;
+  out.numScoreValueChannels = inputBuffers->singleScoreValueResultElts;
+  out.numOwnershipChannels = inputBuffers->singleOwnershipResultElts;
 }
 
 
@@ -2546,6 +2574,12 @@ void NeuralNet::getOutput(
   float* valueData = value.data();
   float* scoreValueData = scoreValue.data();
   float* ownershipData = ownership.data();
+
+  inputBuffers->rawPolicyPassResults = policyPassData;
+  inputBuffers->rawPolicyResults = policyData;
+  inputBuffers->rawValueResults = valueData;
+  inputBuffers->rawScoreValueResults = scoreValueData;
+  inputBuffers->rawOwnershipResults = ownershipData;
 
   for(int row = 0; row < batchSize; row++) {
     NNOutput* output = outputs[row];

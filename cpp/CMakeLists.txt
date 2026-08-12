@@ -67,10 +67,10 @@ list(LENGTH KATAGO_SM8X_CUDA_ARCHITECTURES KATAGO_SM8X_CUDA_ARCHITECTURE_COUNT)
 if(NOT KATAGO_SM8X_CUDA_ARCHITECTURE_COUNT EQUAL 1)
   message(FATAL_ERROR "SM8x Flash/tactic targets require exactly one CUDA architecture")
 endif()
-set(KATAGO_TILELANG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/TileLang"
-  CACHE PATH "Compatible TileLang package root used by generated CUDA sources")
-set(KATAGO_CUTLASS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cutlass"
-  CACHE PATH "Compatible CUTLASS source root used by generated CUDA sources")
+set(KATAGO_TILELANG_ROOT "" CACHE PATH
+  "Compatible TileLang package root used by optional SM120 CUDA sources")
+set(KATAGO_CUTLASS_ROOT "" CACHE PATH
+  "Compatible CUTLASS source root used by optional SM120 CUDA sources")
 
 set(USE_CACHE_TENSORRT_PLAN 0 CACHE BOOL "Use TENSORRT plan cache. May use a lot of disk space. Only applies when USE_BACKEND is TENSORRT.")
 mark_as_advanced(USE_CACHE_TENSORRT_PLAN)
@@ -80,15 +80,6 @@ mark_as_advanced(USE_CACHE_TENSORRT_PLAN)
 message(STATUS "Building 'katago' executable for GTP engine and other tools.")
 if(USE_BACKEND STREQUAL "CUDA")
   message(STATUS "-DUSE_BACKEND=CUDA, using CUDA backend.")
-
-  if(NOT EXISTS "${KATAGO_TILELANG_ROOT}/src/tl_templates/cuda/debug.h")
-    message(FATAL_ERROR
-      "KATAGO_TILELANG_ROOT does not contain TileLang CUDA headers: ${KATAGO_TILELANG_ROOT}")
-  endif()
-  if(NOT EXISTS "${KATAGO_CUTLASS_ROOT}/include/cutlass/cutlass.h")
-    message(FATAL_ERROR
-      "KATAGO_CUTLASS_ROOT does not contain CUTLASS headers: ${KATAGO_CUTLASS_ROOT}")
-  endif()
 
   # Apply an explicit architecture before CUDA compiler detection so that the
   # cache, compiler probe, target defaults, and architecture-specific object
@@ -169,6 +160,22 @@ if(USE_BACKEND STREQUAL "CUDA")
     neuralnet/cudabackend_sm89.cpp
     neuralnet/cudabackend_sm89_forward.cpp
     neuralnet/cudabackend_sm89_kernels.cu
+    neuralnet/cudautils.cpp
+    neuralnet/cudahelpers.cu
+  )
+  set(KATAGO_ENABLE_SM120_BACKEND FALSE)
+  if(KATAGO_TILELANG_ROOT OR KATAGO_CUTLASS_ROOT)
+    if(NOT KATAGO_TILELANG_ROOT OR
+       NOT EXISTS "${KATAGO_TILELANG_ROOT}/src/tl_templates/cuda/debug.h")
+      message(FATAL_ERROR
+        "KATAGO_TILELANG_ROOT does not contain TileLang CUDA headers: ${KATAGO_TILELANG_ROOT}")
+    endif()
+    if(NOT KATAGO_CUTLASS_ROOT OR
+       NOT EXISTS "${KATAGO_CUTLASS_ROOT}/include/cutlass/cutlass.h")
+      message(FATAL_ERROR
+        "KATAGO_CUTLASS_ROOT does not contain CUTLASS headers: ${KATAGO_CUTLASS_ROOT}")
+    endif()
+    list(APPEND NEURALNET_BACKEND_SOURCES
     neuralnet/cudabackend_sm120.cpp
     neuralnet/cudabackend_sm120_kernels.cu
     neuralnet/cudabackend_sm120_aot_registry.cu
@@ -197,8 +204,6 @@ if(USE_BACKEND STREQUAL "CUDA")
     ${SM120_SEARCH_QKV_ROPE_FAT_BRIDGE_SOURCES}
     ${SM120_SEARCH_FFN_FAT_BRIDGE_SOURCES}
     ${SM120_SEARCH_FA4_FAT_SOURCES}
-    neuralnet/cudautils.cpp
-    neuralnet/cudahelpers.cu
   )
   set_source_files_properties(
     neuralnet/cudabackend_sm120_aot_registry.cu
@@ -234,6 +239,8 @@ if(USE_BACKEND STREQUAL "CUDA")
     PROPERTIES
       INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet"
   )
+    set(KATAGO_ENABLE_SM120_BACKEND TRUE)
+  endif()
   if(SM89_FLASH_ATTN_ROOT)
     if(NOT EXISTS "${SM89_FLASH_ATTN_ROOT}/hopper/flash_fwd_launch_template.h" OR
        NOT EXISTS "${SM89_FLASH_ATTN_ROOT}/csrc/cutlass/include/cutlass/cutlass.h" OR
@@ -649,6 +656,9 @@ add_executable(katago
 
 if(USE_BACKEND STREQUAL "CUDA")
   target_compile_definitions(katago PRIVATE USE_CUDA_BACKEND)
+  if(KATAGO_ENABLE_SM120_BACKEND)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM120_BACKEND)
+  endif()
   if(KATAGO_ENABLE_SM89_FLASH_ATTN)
     target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_FLASH_ATTN)
   endif()

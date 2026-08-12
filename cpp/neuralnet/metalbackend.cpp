@@ -869,6 +869,18 @@ void NeuralNet::freeInputBuffers(InputBuffers* inputBuffers) {
   delete inputBuffers;
 }
 
+void NeuralNet::getRawNNOutputs(InputBuffers* inputBuffers, RawNNOutputs& out) {
+  out.policyPassResults = inputBuffers->policyPassResults;
+  out.policyResults = inputBuffers->policyResults;
+  out.valueResults = inputBuffers->valueResults;
+  out.scoreValueResults = inputBuffers->scoreValuesResults;
+  out.ownershipResults = inputBuffers->ownershipResults;
+  out.numPolicyChannels = inputBuffers->policyResultChannels;
+  out.numValueChannels = inputBuffers->singleValueResultElts;
+  out.numScoreValueChannels = inputBuffers->singleScoreValuesResultElts;
+  out.numOwnershipChannels = inputBuffers->singleOwnershipResultElts;
+}
+
 //------------------------------------------------------------------------------
 // MetalProcess namespace - Helper functions
 //------------------------------------------------------------------------------

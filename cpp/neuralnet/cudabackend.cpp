@@ -3353,6 +3353,7 @@ struct PolicyHead {
     if(!useWideG1)
       g1Conv.apply(cudaHandles,batchSize,false,trunkBuf,g1Out.buf,workspaceBuf,workspaceBytes);
     bool usedHeadBNHalfToFloat = false;
+#ifdef KATAGO_ENABLE_SM120_BACKEND
     if(usingFP16 && usingNHWC && maskBuf == NULL &&
        cudaHandles->sm120UseHeadBNHalfToFloat) {
       usedHeadBNHalfToFloat = Sm120Backend::launchHeadBNHalfToFloat(
@@ -3370,6 +3371,7 @@ struct PolicyHead {
         cudaHandles->loggedSm120HeadBNHalfToFloat = true;
       }
     }
+#endif
     if(useWideG1)
       testAssert(usedHeadBNHalfToFloat);
     if(!usedHeadBNHalfToFloat)
@@ -3625,6 +3627,7 @@ struct ValueHead {
     if(!useWideV1)
       v1Conv.apply(cudaHandles,batchSize,false,trunkBuf,v1Out.buf,workspaceBuf,workspaceBytes);
     bool usedHeadBNHalfToFloat = false;
+#ifdef KATAGO_ENABLE_SM120_BACKEND
     if(usingFP16 && usingNHWC && maskBuf == NULL &&
        cudaHandles->sm120UseHeadBNHalfToFloat) {
       usedHeadBNHalfToFloat = Sm120Backend::launchHeadBNHalfToFloat(
@@ -3642,6 +3645,7 @@ struct ValueHead {
         cudaHandles->loggedSm120HeadBNHalfToFloat = true;
       }
     }
+#endif
     if(useWideV1)
       testAssert(usedHeadBNHalfToFloat);
     if(!usedHeadBNHalfToFloat)
@@ -3665,6 +3669,7 @@ struct ValueHead {
     v2Mul.apply(cudaHandles,scratch,batchSize,v1Mean.buf,v2Out.buf,workspaceBuf,workspaceBytes);
     v2Bias.apply(cudaHandles,batchSize,v2Out.buf);
     bool usedFusedTerminal = false;
+#ifdef KATAGO_ENABLE_SM120_BACKEND
     if(fusedValueTerminalActive) {
       const int combinedChannels = valueChannels + scoreValueChannels;
       SizedBuf<void*> combined(
@@ -3688,6 +3693,7 @@ struct ValueHead {
         cudaHandles->loggedSm120FusedValueTerminal = true;
       }
     }
+#endif
     if(!usedFusedTerminal) {
       v3Mul.apply(cudaHandles,scratch,batchSize,v2Out.buf,valueBuf,workspaceBuf,workspaceBytes);
       v3Bias.apply(cudaHandles,batchSize,valueBuf);
@@ -4179,8 +4185,10 @@ struct ComputeContext {
   enabled_t use1x1MatmulMode;
   // SM89-specific backend options; only used when a server thread is on a SM89 device.
   Sm89Backend::Options sm89Options;
+#ifdef KATAGO_ENABLE_SM120_BACKEND
   // SM120-specific backend options; only used when a server thread is on a SM120 device.
   Sm120Backend::Options sm120Options;
+#endif
 };
 
 ComputeContext* NeuralNet::createComputeContext(
@@ -4215,7 +4223,9 @@ ComputeContext* NeuralNet::createComputeContext(
   context->use1x1MatmulMode =
     cfg.contains("cudaUse1x1Matmul") ? cfg.getEnabled("cudaUse1x1Matmul") : enabled_t::Auto;
   context->sm89Options = Sm89Backend::parseOptions(cfg);
+#ifdef KATAGO_ENABLE_SM120_BACKEND
   context->sm120Options = Sm120Backend::parseOptions(cfg);
+#endif
   return context;
 }
 
@@ -4258,8 +4268,10 @@ struct ComputeHandle {
   cudaEvent_t outputReadyEvent;
   cudaGraph_t eventPipelineGraph;
   cudaGraphExec_t eventPipelineGraphExec;
+#ifdef KATAGO_ENABLE_SM120_BACKEND
   // Set only on SM120 devices; routes apply() to the SM120-specific path.
   std::unique_ptr<Sm120Backend::Sm120Model> sm120Model;
+#endif
   // Set only on SM89 devices; routes apply() to the SM89-specific path.
   std::unique_ptr<Sm89Backend::Sm89Model> sm89Model;
 
@@ -4303,6 +4315,7 @@ struct ComputeHandle {
     cudaHandles = std::make_unique<CudaHandles>(majorComputeCapability,minorComputeCapability,stream);
     // Must be set before building the model: ConvLayer reads it at construction to pick the 1x1 conv path.
     cudaHandles->use1x1MatmulMode = context->use1x1MatmulMode;
+#ifdef KATAGO_ENABLE_SM120_BACKEND
     cudaHandles->sm120InitialConvFrontendEngine = 0;
     cudaHandles->sm120ShareModelWeights =
       Sm120Backend::isSm120Arch(majorComputeCapability, minorComputeCapability) &&
@@ -4322,6 +4335,7 @@ struct ComputeHandle {
               "eng47-k2-2-k6-1-k13-1-k14-0-k22-2")
         cudaHandles->sm120InitialConvFrontendEngine = 47;
     }
+#endif
     model = std::make_unique<Model>(
       cudaHandles.get(), &(loadedModel->modelDesc), maxBatchSize,
       nnXLen, nnYLen, inputsUseNHWC, useFP16, useNHWC
@@ -4329,6 +4343,7 @@ struct ComputeHandle {
     scratch = std::make_unique<ScratchBuffers>(maxBatchSize, nnXLen, nnYLen, useFP16);
     buffers = std::make_unique<Buffers>(cudaHandles.get(), *model, *scratch);
 
+#ifdef KATAGO_ENABLE_SM120_BACKEND
     if(Sm120Backend::isSm120Arch(majorComputeCapability, minorComputeCapability) &&
        context->sm120Options.enabled) {
       sm120Model = std::make_unique<Sm120Backend::Sm120Model>(
@@ -4407,6 +4422,7 @@ struct ComputeHandle {
         cudaHandles->sm120WideHeadProjectionContext = sm120Model.get();
       }
     }
+#endif
     if(Sm89Backend::isSm89Arch(majorComputeCapability, minorComputeCapability) &&
        context->sm89Options.enabled) {
       sm89Model = std::make_unique<Sm89Backend::Sm89Model>(
@@ -4531,6 +4547,7 @@ struct ComputeHandle {
     cudaEvent_t inputConsumedEvent_ = nullptr,
     cudaEvent_t outputConsumedEvent_ = nullptr
   ) const {
+#ifdef KATAGO_ENABLE_SM120_BACKEND
     if(sm120Model != nullptr) {
       if(outputConsumedEvent_ != nullptr)
         CUDA_ERR("ComputeHandle::apply",cudaStreamWaitEvent(cudaHandles_->stream,outputConsumedEvent_,0));
@@ -4544,7 +4561,9 @@ struct ComputeHandle {
       if(inputConsumedEvent_ != nullptr)
         CUDA_ERR("ComputeHandle::apply",cudaEventRecord(inputConsumedEvent_,cudaHandles_->stream));
     }
-    else if(sm89Model != nullptr) {
+    else
+#endif
+    if(sm89Model != nullptr) {
       sm89Model->apply(
         cudaHandles_, scratch_, batchSize, requireExactNNLen_,
         inputBuf, inputGlobalBuf, inputMetaBuf,
@@ -4760,8 +4779,10 @@ ComputeHandle* NeuralNet::createComputeHandle(
       ": cudaUseGraphInference = true (per-batch compute-only CUDA graphs)"
     );
   }
+#ifdef KATAGO_ENABLE_SM120_BACKEND
   if(gpuHandle->sm120Model != nullptr)
     gpuHandle->sm120Model->setLogger(logger);
+#endif
   if(gpuHandle->sm89Model != nullptr)
     gpuHandle->sm89Model->setLogger(logger);
   return gpuHandle;
