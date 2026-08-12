@@ -7,16 +7,28 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
+if(NOT CMAKE_CONFIGURATION_TYPES)
+  # Default to RelWithDebInfo if no build type specified
+  if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+  endif()
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
+
 include_directories(external)
-include_directories(external/tclap-1.2.2/include)
+include_directories(SYSTEM external/tclap-1.2.5/include) #SYSTEM suppresses warnings from external library
 include_directories(SYSTEM external/filesystem-1.5.8/include) #SYSTEM suppresses a few warnings
 
 #--------------------------- PLATFORM SPECIFIC -------------------------------------------------------------------------
 
 if(APPLE)
   # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-  include_directories(/usr/local/include)
-  link_directories(/usr/local/lib)
+  if(IS_DIRECTORY /usr/local/include)
+    include_directories(/usr/local/include)
+  endif()
+  if(IS_DIRECTORY /usr/local/lib)
+    link_directories(/usr/local/lib)
+  endif()
 endif()
 
 if(NOT WIN32)
@@ -32,12 +44,33 @@ endif()
 set(BUILD_DISTRIBUTED 0 CACHE BOOL "Build with http support for contributing to distributed training")
 set(USE_BACKEND CACHE STRING "Neural net backend")
 string(TOUPPER "${USE_BACKEND}" USE_BACKEND)
-set_property(CACHE USE_BACKEND PROPERTY STRINGS "" CUDA TENSORRT OPENCL EIGEN)
+set_property(CACHE USE_BACKEND PROPERTY STRINGS "" CUDA TENSORRT OPENCL EIGEN METAL)
 
 set(USE_TCMALLOC 0 CACHE BOOL "Use TCMalloc")
 set(NO_GIT_REVISION 0 CACHE BOOL "Disable embedding the git revision into the compiled exe")
 set(USE_AVX2 0 CACHE BOOL "Compile with AVX2")
 set(USE_BIGGER_BOARDS_EXPENSIVE 0 CACHE BOOL "Allow boards up to size 50. Compiling with this will use more memory and slow down KataGo, even when playing on boards of size 19.")
+set(SM89_FLASH_ATTN_ROOT "" CACHE PATH "Patched compatible Dao-AILab/flash-attention source for the optional SM89 AOT kernel")
+set(SM89_TACTIC_TILELANG_ROOT "" CACHE PATH "TileLang package root for generated SM89 tactic sources")
+set(SM89_SEARCH_DUAL_FFN_FAT_REGISTRY "" CACHE FILEPATH "Generated SM89 dual-FFN fat registry")
+set(SM89_SEARCH_DUAL_FFN_FAT_SOURCES "" CACHE STRING "Semicolon-separated generated SM89 dual-FFN sources")
+set(SM89_SEARCH_LINEAR2_FAT_REGISTRY "" CACHE FILEPATH "Generated SM89 linear2 fat registry")
+set(SM89_SEARCH_LINEAR2_FAT_SOURCES "" CACHE STRING "Semicolon-separated generated SM89 linear2 sources")
+set(SM89_CUDA_ARCHITECTURES "" CACHE STRING "Optional CUDA architecture list for an SM89-only search build")
+set(KATAGO_SM8X_CUDA_ARCHITECTURES 89)
+if(KATAGO_CUDA_ARCHITECTURES)
+  set(KATAGO_SM8X_CUDA_ARCHITECTURES ${KATAGO_CUDA_ARCHITECTURES})
+elseif(SM89_CUDA_ARCHITECTURES)
+  set(KATAGO_SM8X_CUDA_ARCHITECTURES ${SM89_CUDA_ARCHITECTURES})
+endif()
+list(LENGTH KATAGO_SM8X_CUDA_ARCHITECTURES KATAGO_SM8X_CUDA_ARCHITECTURE_COUNT)
+if(NOT KATAGO_SM8X_CUDA_ARCHITECTURE_COUNT EQUAL 1)
+  message(FATAL_ERROR "SM8x Flash/tactic targets require exactly one CUDA architecture")
+endif()
+set(KATAGO_TILELANG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/TileLang"
+  CACHE PATH "Compatible TileLang package root used by generated CUDA sources")
+set(KATAGO_CUTLASS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cutlass"
+  CACHE PATH "Compatible CUTLASS source root used by generated CUDA sources")
 
 set(USE_CACHE_TENSORRT_PLAN 0 CACHE BOOL "Use TENSORRT plan cache. May use a lot of disk space. Only applies when USE_BACKEND is TENSORRT.")
 mark_as_advanced(USE_CACHE_TENSORRT_PLAN)
@@ -48,16 +81,275 @@ message(STATUS "Building 'katago' executable for GTP engine and other tools.")
 if(USE_BACKEND STREQUAL "CUDA")
   message(STATUS "-DUSE_BACKEND=CUDA, using CUDA backend.")
 
-  enable_language(CUDA)
+  if(NOT EXISTS "${KATAGO_TILELANG_ROOT}/src/tl_templates/cuda/debug.h")
+    message(FATAL_ERROR
+      "KATAGO_TILELANG_ROOT does not contain TileLang CUDA headers: ${KATAGO_TILELANG_ROOT}")
+  endif()
+  if(NOT EXISTS "${KATAGO_CUTLASS_ROOT}/include/cutlass/cutlass.h")
+    message(FATAL_ERROR
+      "KATAGO_CUTLASS_ROOT does not contain CUTLASS headers: ${KATAGO_CUTLASS_ROOT}")
+  endif()
 
+  # Apply an explicit architecture before CUDA compiler detection so that the
+  # cache, compiler probe, target defaults, and architecture-specific object
+  # libraries all describe the same binary.
+  if(KATAGO_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES "${KATAGO_CUDA_ARCHITECTURES}" CACHE STRING
+      "CUDA architectures emitted for this target build" FORCE)
+  elseif(SM89_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES "${SM89_CUDA_ARCHITECTURES}" CACHE STRING
+      "CUDA architectures emitted for this target build" FORCE)
+  endif()
+
+  enable_language(CUDA)
   set(CUDA_STANDARD 11)
+  set(SM120_SEARCH_FFN_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_ffn_stub.cu"
+    CACHE FILEPATH "Exact-batch FFN AOT candidate used by the whole-graph search slot")
+  set(SM120_SEARCH_QKV_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_qkv_stub.cu"
+    CACHE FILEPATH "Exact-batch QKV AOT candidate used by the whole-graph search slot")
+  set(SM120_SEARCH_QKV_OBJECT ""
+    CACHE FILEPATH "Freshly generated CuTe QKV AOT object for the search slot")
+  set(SM120_SEARCH_LINEAR2_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_linear2_stub.cu"
+    CACHE FILEPATH "Exact-batch linear2 AOT candidate used by the whole-graph search slot")
+  set(SM120_SEARCH_OUTPROJ_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_outproj_stub.cu"
+    CACHE FILEPATH "Exact-batch outproj AOT candidate used by the whole-graph search slot")
+  set(SM120_SEARCH_FA4_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/fa4_aot/sm120_search_fa4_stub.cpp"
+    CACHE FILEPATH "Exact-batch FA4 AOT bridge used by the whole-graph search slot")
+  set(SM120_SEARCH_FA4_OBJECT "" CACHE FILEPATH
+    "Exact-batch FA4 AOT host object used by the whole-graph search slot")
+  set(SM120_SEARCH_FFN_FAT_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch FFN TileLang TUs linked for one fat scan")
+  set(SM120_SEARCH_QKV_FAT_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch QKV TileLang TUs linked for one fat scan")
+  set(SM120_SEARCH_LINEAR2_FAT_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch linear2 TileLang TUs linked for one fat scan")
+  set(SM120_SEARCH_OUTPROJ_FAT_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch outproj TileLang TUs linked for one fat scan")
+  set(SM120_SEARCH_QKV_FAT_BRIDGE_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch CuTe QKV bridge TUs linked for one fat scan")
+  set(SM120_SEARCH_QKV_FAT_OBJECTS "" CACHE STRING
+    "Semicolon-separated exact-batch CuTe QKV AOT objects linked for one fat scan")
+  set(SM120_SEARCH_QKV_ROPE_FAT_BRIDGE_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch CuTe QKV+RoPE bridge TUs linked for one fat scan")
+  set(SM120_SEARCH_QKV_ROPE_FAT_OBJECTS "" CACHE STRING
+    "Semicolon-separated exact-batch CuTe QKV+RoPE AOT objects linked for one fat scan")
+  set(SM120_SEARCH_FFN_FAT_BRIDGE_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch CuTe fused-FFN bridge TUs linked for one fat scan")
+  set(SM120_SEARCH_FFN_FAT_OBJECTS "" CACHE STRING
+    "Semicolon-separated exact-batch CuTe fused-FFN AOT objects linked for one fat scan")
+  set(SM120_SEARCH_FA4_FAT_SOURCES "" CACHE STRING
+    "Semicolon-separated exact-batch FA4 bridge TUs linked for one fat scan")
+  set(SM120_SEARCH_FA4_FAT_OBJECTS "" CACHE STRING
+    "Semicolon-separated exact-batch FA4 AOT objects linked for one fat scan")
+  set(SM120_SEARCH_FFN_FAT_REGISTRY_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_ffn_fat_stub.cu"
+    CACHE FILEPATH "Generated exact-batch FFN fat-scan registry, or its empty stub")
+  set(SM120_SEARCH_QKV_FAT_REGISTRY_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_qkv_fat_stub.cu"
+    CACHE FILEPATH "Generated exact-batch QKV fat-scan registry, or its empty stub")
+  set(SM120_SEARCH_QKV_ROPE_FAT_REGISTRY_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_qkv_rope_fat_stub.cu"
+    CACHE FILEPATH "Generated exact-batch QKV+RoPE fat registry, or its empty stub")
+  set(SM120_SEARCH_LINEAR2_FAT_REGISTRY_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_linear2_fat_stub.cu"
+    CACHE FILEPATH "Generated exact-batch linear2 fat-scan registry, or its empty stub")
+  set(SM120_SEARCH_OUTPROJ_FAT_REGISTRY_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/tilelang_aot/sm120_search_outproj_fat_stub.cu"
+    CACHE FILEPATH "Generated exact-batch outproj fat-scan registry, or its empty stub")
+  set(SM120_SEARCH_FA4_FAT_REGISTRY_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/fa4_aot/sm120_search_fa4_fat_stub.cpp"
+    CACHE FILEPATH "Generated exact-batch FA4 fat-scan registry, or its empty stub")
   set(NEURALNET_BACKEND_SOURCES
     neuralnet/cudabackend.cpp
+    neuralnet/cudabackend_sm89.cpp
+    neuralnet/cudabackend_sm89_forward.cpp
+    neuralnet/cudabackend_sm89_kernels.cu
+    neuralnet/cudabackend_sm120.cpp
+    neuralnet/cudabackend_sm120_kernels.cu
+    neuralnet/cudabackend_sm120_aot_registry.cu
+    neuralnet/fa4_aot/fa4_cuda_bridge.cpp
+    neuralnet/sm120_aot/outproj_residual_cutlass.cu
+    neuralnet/sm120_aot/linear2_residual_cutlass.cu
+    neuralnet/sm120_aot/dual_ffn_shared_a.cu
+    neuralnet/sm120_aot/outer_projection.cu
+    neuralnet/sm120_aot/postconv_residual_affine_silu.cu
+    ${SM120_SEARCH_FFN_SOURCE}
+    ${SM120_SEARCH_QKV_SOURCE}
+    ${SM120_SEARCH_LINEAR2_SOURCE}
+    ${SM120_SEARCH_OUTPROJ_SOURCE}
+    ${SM120_SEARCH_FA4_SOURCE}
+    ${SM120_SEARCH_FFN_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_QKV_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_QKV_ROPE_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_LINEAR2_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_OUTPROJ_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_FA4_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_FFN_FAT_SOURCES}
+    ${SM120_SEARCH_QKV_FAT_SOURCES}
+    ${SM120_SEARCH_LINEAR2_FAT_SOURCES}
+    ${SM120_SEARCH_OUTPROJ_FAT_SOURCES}
+    ${SM120_SEARCH_QKV_FAT_BRIDGE_SOURCES}
+    ${SM120_SEARCH_QKV_ROPE_FAT_BRIDGE_SOURCES}
+    ${SM120_SEARCH_FFN_FAT_BRIDGE_SOURCES}
+    ${SM120_SEARCH_FA4_FAT_SOURCES}
     neuralnet/cudautils.cpp
     neuralnet/cudahelpers.cu
   )
+  set_source_files_properties(
+    neuralnet/cudabackend_sm120_aot_registry.cu
+    neuralnet/sm120_aot/outproj_residual_cutlass.cu
+    neuralnet/sm120_aot/linear2_residual_cutlass.cu
+    neuralnet/sm120_aot/dual_ffn_shared_a.cu
+    neuralnet/sm120_aot/outer_projection.cu
+    neuralnet/sm120_aot/postconv_residual_affine_silu.cu
+    ${SM120_SEARCH_FFN_SOURCE}
+    ${SM120_SEARCH_QKV_SOURCE}
+    ${SM120_SEARCH_LINEAR2_SOURCE}
+    ${SM120_SEARCH_OUTPROJ_SOURCE}
+    ${SM120_SEARCH_FFN_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_QKV_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_QKV_ROPE_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_LINEAR2_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_OUTPROJ_FAT_REGISTRY_SOURCE}
+    ${SM120_SEARCH_FFN_FAT_SOURCES}
+    ${SM120_SEARCH_QKV_FAT_SOURCES}
+    ${SM120_SEARCH_LINEAR2_FAT_SOURCES}
+    ${SM120_SEARCH_OUTPROJ_FAT_SOURCES}
+    PROPERTIES
+      CUDA_ARCHITECTURES "120"
+      INCLUDE_DIRECTORIES
+      "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet;${KATAGO_TILELANG_ROOT}/src;${KATAGO_CUTLASS_ROOT}/include;${KATAGO_CUTLASS_ROOT}/examples/45_dual_gemm"
+  )
+  set_source_files_properties(
+    ${SM120_SEARCH_QKV_FAT_BRIDGE_SOURCES}
+    ${SM120_SEARCH_QKV_ROPE_FAT_BRIDGE_SOURCES}
+    ${SM120_SEARCH_FFN_FAT_BRIDGE_SOURCES}
+    ${SM120_SEARCH_FA4_FAT_SOURCES}
+    ${SM120_SEARCH_FA4_FAT_REGISTRY_SOURCE}
+    PROPERTIES
+      INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet"
+  )
+  if(SM89_FLASH_ATTN_ROOT)
+    if(NOT EXISTS "${SM89_FLASH_ATTN_ROOT}/hopper/flash_fwd_launch_template.h" OR
+       NOT EXISTS "${SM89_FLASH_ATTN_ROOT}/csrc/cutlass/include/cutlass/cutlass.h" OR
+       NOT EXISTS "${SM89_FLASH_ATTN_ROOT}/csrc/cutlass/examples/45_dual_gemm/device/dual_gemm.h" OR
+       NOT EXISTS "${SM89_FLASH_ATTN_ROOT}/LICENSE")
+      message(FATAL_ERROR "SM89_FLASH_ATTN_ROOT does not contain compatible flash-attention hopper and CUTLASS sources")
+    endif()
+    file(READ "${SM89_FLASH_ATTN_ROOT}/hopper/tile_size.h" KATAGO_FLASH_TILE_SIZE_SOURCE)
+    file(READ "${SM89_FLASH_ATTN_ROOT}/hopper/flash_fwd_launch_template.h" KATAGO_FLASH_FWD_LAUNCH_SOURCE)
+    file(READ "${SM89_FLASH_ATTN_ROOT}/hopper/mainloop_fwd_sm80.hpp" KATAGO_FLASH_SM80_MAINLOOP_SOURCE)
+    file(READ "${SM89_FLASH_ATTN_ROOT}/hopper/softmax.h" KATAGO_FLASH_SOFTMAX_SOURCE)
+    if(NOT KATAGO_FLASH_TILE_SIZE_SOURCE MATCHES "KATAGO_FLASH_BLOCK_N" OR
+       NOT KATAGO_FLASH_FWD_LAUNCH_SOURCE MATCHES "KATAGO_FLASH_BOTH16_ACCUM" OR
+       NOT KATAGO_FLASH_SM80_MAINLOOP_SOURCE MATCHES "KATAGO_FLASH_BOTH16_ACCUM" OR
+       NOT KATAGO_FLASH_SOFTMAX_SOURCE MATCHES "KATAGO_FLASH_BOTH16_ACCUM")
+      message(FATAL_ERROR
+        "Apply cpp/neuralnet/flash-attention-sm89.patch to SM89_FLASH_ATTN_ROOT before configuring")
+    endif()
+    add_library(katago_sm89_flash OBJECT
+      neuralnet/cudabackend_sm89_flash.cu
+      neuralnet/cudabackend_sm89_dual_gemm.cu
+      neuralnet/cudabackend_sm89_linear2_gemm.cu
+      neuralnet/cudabackend_sm89_qkv_rope_gemm.cu
+    )
+    set_target_properties(katago_sm89_flash PROPERTIES
+      CUDA_ARCHITECTURES ${KATAGO_SM8X_CUDA_ARCHITECTURES} CUDA_STANDARD 17)
+    target_include_directories(katago_sm89_flash SYSTEM PRIVATE
+      "${SM89_FLASH_ATTN_ROOT}/hopper"
+      "${SM89_FLASH_ATTN_ROOT}/csrc/cutlass/include"
+      "${SM89_FLASH_ATTN_ROOT}/csrc/cutlass/examples/45_dual_gemm"
+    )
+    target_compile_definitions(katago_sm89_flash PRIVATE
+      KATAGO_ENABLE_SM89_FLASH_ATTN
+      KATAGO_ENABLE_SM89_DUAL_GEMM
+      KATAGO_ENABLE_SM89_LINEAR2_GEMM
+      KATAGO_ENABLE_SM89_OUTPROJ_GEMM
+      KATAGO_ENABLE_SM89_PRECONV_GEMM
+      KATAGO_ENABLE_SM89_POSTCONV_GEMM
+      KATAGO_ENABLE_SM89_QKV_ROPE_GEMM
+      KATAGO_FLASH_COMPILED_D=32
+      KATAGO_FLASH_BLOCK_M=64
+      KATAGO_FLASH_BLOCK_N=96
+      KATAGO_FLASH_NUM_WARPS=4
+      KATAGO_FLASH_PACK_GQA=0
+      KATAGO_SM8X_COMPILED_ARCH=${KATAGO_SM8X_CUDA_ARCHITECTURES}
+      NDEBUG
+    )
+    target_compile_options(katago_sm89_flash PRIVATE
+      $<$<COMPILE_LANGUAGE:CUDA>:--use_fast_math;--expt-relaxed-constexpr;--expt-extended-lambda;-lineinfo;-diag-suppress=20013>
+    )
+    list(APPEND NEURALNET_BACKEND_SOURCES $<TARGET_OBJECTS:katago_sm89_flash>)
+    set(KATAGO_ENABLE_SM89_FLASH_ATTN TRUE)
+    set(KATAGO_ENABLE_SM89_DUAL_GEMM TRUE)
+    set(KATAGO_ENABLE_SM89_LINEAR2_GEMM TRUE)
+    set(KATAGO_ENABLE_SM89_OUTPROJ_GEMM TRUE)
+    set(KATAGO_ENABLE_SM89_PRECONV_GEMM TRUE)
+    set(KATAGO_ENABLE_SM89_POSTCONV_GEMM TRUE)
+    set(KATAGO_ENABLE_SM89_QKV_ROPE_GEMM TRUE)
+  endif()
+  if(SM89_SEARCH_DUAL_FFN_FAT_REGISTRY OR SM89_SEARCH_DUAL_FFN_FAT_SOURCES OR
+     SM89_SEARCH_LINEAR2_FAT_REGISTRY OR SM89_SEARCH_LINEAR2_FAT_SOURCES)
+    if(NOT SM89_SEARCH_DUAL_FFN_FAT_REGISTRY OR
+       NOT SM89_SEARCH_LINEAR2_FAT_REGISTRY OR
+       NOT SM89_TACTIC_TILELANG_ROOT)
+      message(FATAL_ERROR
+        "SM89 tactic search requires TileLang root plus both dual-FFN and linear2 registries")
+    endif()
+    if(NOT EXISTS "${SM89_TACTIC_TILELANG_ROOT}/src/tl_templates/cuda/debug.h" OR
+       NOT EXISTS "${SM89_TACTIC_TILELANG_ROOT}/3rdparty/cutlass/include/cutlass/cutlass.h")
+      message(FATAL_ERROR "SM89_TACTIC_TILELANG_ROOT is not a complete TileLang package")
+    endif()
+    foreach(KATAGO_SM89_TACTIC_SOURCE IN LISTS
+      SM89_SEARCH_DUAL_FFN_FAT_SOURCES SM89_SEARCH_LINEAR2_FAT_SOURCES)
+      if(NOT EXISTS "${KATAGO_SM89_TACTIC_SOURCE}")
+        message(FATAL_ERROR "Generated SM89 tactic source does not exist: ${KATAGO_SM89_TACTIC_SOURCE}")
+      endif()
+    endforeach()
+    add_library(katago_sm89_tactic_search OBJECT
+      neuralnet/cudabackend_sm89_tactic_kernels.cpp
+      "${SM89_SEARCH_DUAL_FFN_FAT_REGISTRY}"
+      ${SM89_SEARCH_DUAL_FFN_FAT_SOURCES}
+      "${SM89_SEARCH_LINEAR2_FAT_REGISTRY}"
+      ${SM89_SEARCH_LINEAR2_FAT_SOURCES}
+    )
+    set_target_properties(katago_sm89_tactic_search PROPERTIES
+      CUDA_ARCHITECTURES ${KATAGO_SM8X_CUDA_ARCHITECTURES} CUDA_STANDARD 17)
+    target_include_directories(katago_sm89_tactic_search PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet")
+    target_include_directories(katago_sm89_tactic_search SYSTEM PRIVATE
+      "${SM89_TACTIC_TILELANG_ROOT}/src"
+      "${SM89_TACTIC_TILELANG_ROOT}/3rdparty/cutlass/include")
+    target_compile_options(katago_sm89_tactic_search PRIVATE
+      $<$<COMPILE_LANGUAGE:CUDA>:--use_fast_math;--expt-relaxed-constexpr;--expt-extended-lambda;-lineinfo;-diag-suppress=20012;-diag-suppress=1444>)
+    list(APPEND NEURALNET_BACKEND_SOURCES $<TARGET_OBJECTS:katago_sm89_tactic_search>)
+    set(KATAGO_ENABLE_SM89_TACTIC_SEARCH TRUE)
+  endif()
+  # The vendored header-only cudnn_frontend library trips GCC's -Wnull-dereference from its -O2
+  # interprocedural analysis (no source location, so an in-file #pragma can't suppress it). It's
+  # benign third-party code; silence it just for the one source that includes cudnn_frontend.h.
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set_source_files_properties(neuralnet/cudabackend.cpp PROPERTIES COMPILE_OPTIONS "-Wno-null-dereference")
+  endif()
 # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
-  if(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 12.8)
+  set(KATAGO_CUDA_ARCHITECTURES "" CACHE STRING
+    "Override the CUDA architectures emitted for a target build")
+  if(SM89_CUDA_ARCHITECTURES AND NOT KATAGO_CUDA_ARCHITECTURES)
+    message(DEPRECATION
+      "SM89_CUDA_ARCHITECTURES is deprecated; use KATAGO_CUDA_ARCHITECTURES")
+    set(KATAGO_CUDA_ARCHITECTURES "${SM89_CUDA_ARCHITECTURES}")
+  endif()
+  if(KATAGO_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES ${KATAGO_CUDA_ARCHITECTURES})
+  elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+    set(CMAKE_CUDA_ARCHITECTURES 75 80 86 87 88 89 90 100 110 103 120 121)
+    set(CMAKE_CUDA_FLAGS "-Wno-deprecated-gpu-targets")
+  elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 12.8)
     set(CMAKE_CUDA_ARCHITECTURES 50 52 53 60 61 62 70 72 75 80 86 87 90 120)
     set(CMAKE_CUDA_FLAGS "-Wno-deprecated-gpu-targets")
   elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
@@ -94,7 +386,7 @@ elseif(USE_BACKEND STREQUAL "TENSORRT")
     message(FATAL_ERROR "Combining USE_CACHE_TENSORRT_PLAN with BUILD_DISTRIBUTED is not supported - it would consume excessive disk space and might worsen performance every time models are updated. Use only one at a time in a given build of KataGo.")
   endif()
 elseif(USE_BACKEND STREQUAL "METAL")
-  message(STATUS "-DUSE_BACKEND=METAL, using Metal backend.")
+  message(STATUS "-DUSE_BACKEND=METAL, using Metal backend with hybrid MPSGraph + CoreML execution.")
   if(NOT "${CMAKE_GENERATOR}" STREQUAL "Ninja")
     message(FATAL_ERROR "Bidirectional C++ Interop requires Ninja generator. Have ${CMAKE_GENERATOR}")
   endif()
@@ -104,21 +396,25 @@ elseif(USE_BACKEND STREQUAL "METAL")
   if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     message(FATAL_ERROR "Project requires building with AppleClang. Have ${CMAKE_CXX_COMPILER_ID}")
   endif()
+  add_subdirectory(external/katagocoreml)
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/macos/cmake/modules")
+
+  if (NOT CMAKE_OSX_SYSROOT)
+    execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE CMAKE_OSX_SYSROOT OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
+
   include(InitializeSwift)
   include(AddSwift)
   set(CMAKE_OSX_DEPLOYMENT_TARGET 13.0)
   set(NEURALNET_BACKEND_SOURCES
     neuralnet/metalbackend.cpp
     )
-  _swift_generate_cxx_header_target(
-    KataGoSwift_Swift_h
-    KataGoSwift
-    "${CMAKE_CURRENT_BINARY_DIR}/include/KataGoSwift/KataGoSwift-swift.h"
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet/metalbackend.swift")
   add_library(KataGoSwift STATIC
-    neuralnet/metalbackend.swift)
-  add_dependencies(KataGoSwift KataGoSwift_Swift_h)
+    neuralnet/metalbackend.swift
+    neuralnet/metallayers.swift)
+  _swift_generate_cxx_header(
+    KataGoSwift
+    "${CMAKE_CURRENT_BINARY_DIR}/include/KataGoSwift/KataGoSwift-swift.h")
   target_include_directories(KataGoSwift PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include")
   set_target_properties(KataGoSwift PROPERTIES Swift_MODULE_NAME "KataGoSwift")
   target_compile_options(KataGoSwift PUBLIC
@@ -189,8 +485,30 @@ else()
   set(GIT_HEADER_FILE_TEMPLATE ${CMAKE_SOURCE_DIR}/${GIT_HEADER_FILE_TEMPLATE_BARE})
   set(GIT_HEADER_FILE_ALWAYS_UPDATED ${CMAKE_BINARY_DIR}/${GIT_HEADER_FILE_ALWAYS_UPDATED_BARE})
   set(GIT_HEADER_FILE ${CMAKE_BINARY_DIR}/${GIT_HEADER_FILE_BARE})
+  # Embeds the current git SHA into the binary on every build, while only
+  # triggering recompilation of dependents when the SHA actually changes.
+  #
+  # How it works:
+  #   - ALWAYS_UPDATED is the rule's OUTPUT and is removed at the end of the
+  #     commands, so it is always missing at the start of the next build,
+  #     which forces this rule to re-fire.
+  #   - copy_if_different updates GIT_HEADER_FILE only when the new SHA
+  #     differs from the previous one, leaving its mtime untouched otherwise.
+  #
+  # Both files must be listed as OUTPUTs for Ninja. Ninja's restat (set
+  # automatically for custom_commands) re-checks every declared OUTPUT's
+  # mtime after the rule runs, and only then propagates rebuilds. Listing
+  # GIT_HEADER_FILE is what lets ninja notice an actual SHA change and
+  # rebuild dependents such as main.cpp; without it, dependents stay stale
+  # across commits in incremental builds. The Make generator is more
+  # pessimistic about generated headers and doesn't need this, and adding
+  # it causes unnecessary re-linking on every build.
+  set(GIT_CUSTOM_COMMAND_OUTPUTS ${GIT_HEADER_FILE_ALWAYS_UPDATED})
+  if(CMAKE_GENERATOR MATCHES "Ninja")
+    list(APPEND GIT_CUSTOM_COMMAND_OUTPUTS ${GIT_HEADER_FILE})
+  endif()
   add_custom_command(
-    OUTPUT ${GIT_HEADER_FILE_ALWAYS_UPDATED}
+    OUTPUT ${GIT_CUSTOM_COMMAND_OUTPUTS}
     COMMAND ${CMAKE_COMMAND} -E copy ${GIT_HEADER_FILE_TEMPLATE} ${GIT_HEADER_FILE_ALWAYS_UPDATED}
     COMMAND ${GIT_EXECUTABLE} describe --match=DummyTagNotExisting --always --abbrev=40 --dirty >> ${GIT_HEADER_FILE_ALWAYS_UPDATED}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GIT_HEADER_FILE_ALWAYS_UPDATED} ${GIT_HEADER_FILE}
@@ -242,7 +560,10 @@ add_executable(katago
   neuralnet/sgfmetadata.cpp
   neuralnet/modelversion.cpp
   neuralnet/nneval.cpp
+  neuralnet/cudatacticplan.cpp
+  neuralnet/npzreader.cpp
   neuralnet/desc.cpp
+  neuralnet/debugprint.cpp
   ${NEURALNET_BACKEND_SOURCES}
   book/book.cpp
   book/bookcssjs.cpp
@@ -264,6 +585,7 @@ add_executable(katago
   search/localpattern.cpp
   search/searchnodetable.cpp
   search/subtreevaluebiastable.cpp
+  search/evalcache.cpp
   search/patternbonustable.cpp
   search/analysisdata.cpp
   search/reportedsearchvalues.cpp
@@ -281,11 +603,14 @@ add_executable(katago
   tests/testconfig.cpp
   tests/testmisc.cpp
   tests/testnnevalcanary.cpp
+  tests/testpassalivesuicide.cpp
   tests/testrules.cpp
   tests/testscore.cpp
   tests/testsgf.cpp
   tests/testsymmetries.cpp
   tests/testnninputs.cpp
+  tests/testnnbatchingdispatcher.cpp
+  tests/testnngtpharness.cpp
   tests/testownership.cpp
   tests/testsearchcommon.cpp
   tests/testsearchnonn.cpp
@@ -303,6 +628,8 @@ add_executable(katago
   command/commandline.cpp
   command/analysis.cpp
   command/benchmark.cpp
+  command/benchmarknn.cpp
+  command/replaynn.cpp
   command/contribute.cpp
   command/evalsgf.cpp
   command/gatekeeper.cpp
@@ -314,6 +641,7 @@ add_executable(katago
   command/runtests.cpp
   command/sandbox.cpp
   command/selfplay.cpp
+  command/startposes.cpp
   command/tune.cpp
   command/writetrainingdata.cpp
   main.cpp
@@ -321,6 +649,30 @@ add_executable(katago
 
 if(USE_BACKEND STREQUAL "CUDA")
   target_compile_definitions(katago PRIVATE USE_CUDA_BACKEND)
+  if(KATAGO_ENABLE_SM89_FLASH_ATTN)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_FLASH_ATTN)
+  endif()
+  if(KATAGO_ENABLE_SM89_DUAL_GEMM)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_DUAL_GEMM)
+  endif()
+  if(KATAGO_ENABLE_SM89_LINEAR2_GEMM)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_LINEAR2_GEMM)
+  endif()
+  if(KATAGO_ENABLE_SM89_OUTPROJ_GEMM)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_OUTPROJ_GEMM)
+  endif()
+  if(KATAGO_ENABLE_SM89_PRECONV_GEMM)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_PRECONV_GEMM)
+  endif()
+  if(KATAGO_ENABLE_SM89_POSTCONV_GEMM)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_POSTCONV_GEMM)
+  endif()
+  if(KATAGO_ENABLE_SM89_QKV_ROPE_GEMM)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_QKV_ROPE_GEMM)
+  endif()
+  if(KATAGO_ENABLE_SM89_TACTIC_SEARCH)
+    target_compile_definitions(katago PRIVATE KATAGO_ENABLE_SM89_TACTIC_SEARCH)
+  endif()
   target_compile_definitions(katago PRIVATE CUDA_TARGET_VERSION=${CMAKE_CUDA_COMPILER_VERSION})
   find_package(CUDAToolkit REQUIRED)
   find_path(CUDNN_INCLUDE_DIR cudnn.h HINTS ${CUDNN_ROOT_DIR} ${CUDAToolkit_INCLUDE_DIRS} PATH_SUFFIXES include)
@@ -329,7 +681,28 @@ if(USE_BACKEND STREQUAL "CUDA")
   endif()
   find_library(CUDNN_LIBRARY cudnn HINTS ${CUDNN_ROOT_DIR} ${CUDAToolkit_LIBRARY_DIR} PATH_SUFFIXES lib64)
   include_directories(SYSTEM ${CUDAToolkit_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR}) #SYSTEM is for suppressing some compiler warnings in thrust libraries
-  target_link_libraries(katago CUDA::cublas ${CUDNN_LIBRARY})
+  include_directories(SYSTEM external/cudnn-frontend/include) #SYSTEM suppresses warnings inside the vendored header-only cudnn_frontend library
+  # cudnn_frontend's experimental OSS engine headers reference NVRTC symbols at link time
+  # (we don't actually use those engines, but the references are pulled in by the header-only includes).
+  target_link_libraries(katago CUDA::cublas CUDA::cublasLt ${CUDNN_LIBRARY} CUDA::nvrtc CUDA::cuda_driver)
+  if(SM120_SEARCH_FA4_OBJECT)
+    target_link_libraries(katago ${SM120_SEARCH_FA4_OBJECT})
+  endif()
+  if(SM120_SEARCH_QKV_OBJECT)
+    target_link_libraries(katago ${SM120_SEARCH_QKV_OBJECT})
+  endif()
+  if(SM120_SEARCH_QKV_FAT_OBJECTS)
+    target_link_libraries(katago ${SM120_SEARCH_QKV_FAT_OBJECTS})
+  endif()
+  if(SM120_SEARCH_QKV_ROPE_FAT_OBJECTS)
+    target_link_libraries(katago ${SM120_SEARCH_QKV_ROPE_FAT_OBJECTS})
+  endif()
+  if(SM120_SEARCH_FFN_FAT_OBJECTS)
+    target_link_libraries(katago ${SM120_SEARCH_FFN_FAT_OBJECTS})
+  endif()
+  if(SM120_SEARCH_FA4_FAT_OBJECTS)
+    target_link_libraries(katago ${SM120_SEARCH_FA4_FAT_OBJECTS})
+  endif()
 elseif(USE_BACKEND STREQUAL "TENSORRT")
   target_compile_definitions(katago PRIVATE USE_TENSORRT_BACKEND)
   find_package(CUDAToolkit REQUIRED)
@@ -337,7 +710,6 @@ elseif(USE_BACKEND STREQUAL "TENSORRT")
   if((NOT TENSORRT_INCLUDE_DIR))
     message(FATAL_ERROR "${ColorBoldRed} NvInfer.h was NOT found, specify TENSORRT_INCLUDE_DIR to indicate where it is. ${ColorReset}")
   endif()
-  find_library(TENSORRT_LIBRARY nvinfer HINTS ${TENSORRT_ROOT_DIR} PATH_SUFFIXES lib)
 
   # Hackily extract out the version from the TensorRT header
   # In each case, try the old format and on failure try the new format.
@@ -384,6 +756,8 @@ elseif(USE_BACKEND STREQUAL "TENSORRT")
     message(FATAL_ERROR "Could not determine TensorRT version from header file")
   endif()
 
+  find_library(TENSORRT_LIBRARY NAMES nvinfer nvinfer_${TENSORRT_VERSION_MAJOR} HINTS ${TENSORRT_ROOT_DIR} PATH_SUFFIXES lib)
+
   # Version 8 is required for serializing the builder timing cache.
   # Version 8.2 is required for eliminating the global logger for Builder and Runtime.
   # Version 8.5 is required for eliminating many deprecated APIs and adopting new features.
@@ -393,11 +767,42 @@ elseif(USE_BACKEND STREQUAL "TENSORRT")
   endif()
   include_directories(SYSTEM ${CUDAToolkit_INCLUDE_DIRS} ${TENSORRT_INCLUDE_DIR}) #SYSTEM is for suppressing some compiler warnings in thrust libraries
   target_link_libraries(katago CUDA::cudart_static ${TENSORRT_LIBRARY})
+
+  # The TensorRT backend builds networks by emitting an ONNX ModelProto and handing the
+  # serialized bytes to TensorRT's nvonnxparser. We compile the vendored ONNX schema
+  # (cpp/external/onnx/onnx.proto) with protoc and link against our own protobuf; this is
+  # symbol-isolated from the protobuf that TensorRT statically links into nvonnxparser, so
+  # there is no ABI contact between the two (the handoff is serialized bytes).
+  find_package(Protobuf REQUIRED)
+  message(STATUS "Found Protobuf version: ${Protobuf_VERSION}")
+  set(ONNX_PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/onnx")
+  protobuf_generate_cpp(ONNX_PROTO_SRCS ONNX_PROTO_HDRS "${ONNX_PROTO_DIR}/onnx.proto")
+  # protoc-generated code is not ours to lint; silence its warnings to keep build output readable.
+  set_source_files_properties(${ONNX_PROTO_SRCS} PROPERTIES COMPILE_OPTIONS "-w")
+  target_sources(katago PRIVATE ${ONNX_PROTO_SRCS} neuralnet/onnxmodelbuilder.cpp)
+  # Generated onnx.pb.h lands in the build dir; let backend code include it.
+  target_include_directories(katago SYSTEM PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${Protobuf_INCLUDE_DIRS})
+
+  # nvonnxparser ships alongside nvinfer in the TensorRT lib dir. Derive that dir from the
+  # already-resolved TENSORRT_LIBRARY so this works both with TENSORRT_ROOT_DIR and with a
+  # directly-specified -DTENSORRT_LIBRARY
+  get_filename_component(TENSORRT_LIBRARY_DIR "${TENSORRT_LIBRARY}" DIRECTORY)
+  find_library(TENSORRT_ONNXPARSER_LIBRARY NAMES nvonnxparser nvonnxparser_${TENSORRT_VERSION_MAJOR} HINTS ${TENSORRT_ROOT_DIR} ${TENSORRT_LIBRARY_DIR} PATH_SUFFIXES lib)
+  if(NOT TENSORRT_ONNXPARSER_LIBRARY)
+    message(FATAL_ERROR "${ColorBoldRed} libnvonnxparser was NOT found in the TensorRT lib dir. ${ColorReset}")
+  endif()
+  # Link the imported target rather than ${Protobuf_LIBRARIES}: when protobuf comes from a
+  # CMake package config (e.g. vcpkg), the variable can resolve to the DLL itself rather
+  # than the import lib, and it also omits protobuf's own dependencies such as abseil.
+  target_link_libraries(katago ${TENSORRT_ONNXPARSER_LIBRARY} protobuf::libprotobuf)
 elseif(USE_BACKEND STREQUAL "METAL")
   target_compile_definitions(katago PRIVATE USE_METAL_BACKEND)
-  target_link_libraries(katago KataGoSwift)
+  target_link_libraries(katago KataGoSwift katagocoreml
+    ${KATAGOCOREML_DEP_LDFLAGS}
+    "-framework MetalPerformanceShaders"
+    "-framework MetalPerformanceShadersGraph")
   if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-    message(WARNING "You are currently running cmake on an Intel-based processor. It is known that running KataGo in this configuration may encounter performance issues. It is recommended to switch to a cmake version designed for ARM64 architecture for optimal performance.")
+    message(WARNING "Metal backend may not work optimally on Intel. ARM64 architecture is recommended.")
   endif()
 elseif(USE_BACKEND STREQUAL "OPENCL")
   target_compile_definitions(katago PRIVATE USE_OPENCL_BACKEND)
@@ -420,23 +825,33 @@ elseif(USE_BACKEND STREQUAL "OPENCL")
   endif()
 elseif(USE_BACKEND STREQUAL "EIGEN")
   target_compile_definitions(katago PRIVATE USE_EIGEN_BACKEND)
-  if(NOT (MSVC OR MINGW))
-    find_package(Eigen3 REQUIRED)
+  # Allow EIGEN3_INCLUDE_DIRS as a manual override (for users who downloaded
+  # Eigen3 and just want to point at the unpacked directory).
+  if(EIGEN3_INCLUDE_DIRS)
+    message(STATUS "Using user-provided EIGEN3_INCLUDE_DIRS=${EIGEN3_INCLUDE_DIRS}")
     include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
-    message(STATUS "Found Eigen3 at ${EIGEN3_INCLUDE_DIRS}")
   else()
-    if(EIGEN3_INCLUDE_DIRS)
-      message(STATUS "EIGEN3_INCLUDE_DIRS is set to ${EIGEN3_INCLUDE_DIRS}, assuming that Eigen3 header files are here.")
-      include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
+    if(NOT (MSVC))
+      find_package(Eigen3 REQUIRED)
     else()
       find_package(Eigen3)
       if(NOT Eigen3_FOUND)
         set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} CACHE PATH "Directory containing 'Eigen' and 'unsupported' subdirs with Eigen headers")
         message(FATAL_ERROR "*** KataGo: Eigen3 was not found. If you've downloaded Eigen3, you can IGNORE the whole above error from CMake and just set 'EIGEN3_INCLUDE_DIRS' to the root eigen3-3.*.* directory after unzipping it. Among other things it should contain 'Eigen' and 'unsupported' subdirs, which is all KataGo needs. Otherwise, you will need to 'build' Eigen3 even though it is header-only and install it via MSVC in order for cmake to find it via FindEigen3.cmake.")
-      else()
-        include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
-        message(STATUS "Found Eigen3 at ${EIGEN3_INCLUDE_DIRS}")
       endif()
+    endif()
+    # Modern Eigen3Config.cmake (Homebrew, apt, vcpkg, ...) only exports the
+    # imported target Eigen3::Eigen with INTERFACE_INCLUDE_DIRECTORIES set; the
+    # legacy variable EIGEN3_INCLUDE_DIRS is not always populated. Prefer the
+    # target where available, fall back to the variable for older installs.
+    if(TARGET Eigen3::Eigen)
+      # Plain (non-keyword) form to match the rest of KataGo's CMakeLists,
+      # which doesn't use PRIVATE/PUBLIC/INTERFACE on target_link_libraries.
+      target_link_libraries(katago Eigen3::Eigen)
+      message(STATUS "Found Eigen3 (using Eigen3::Eigen imported target)")
+    else()
+      include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
+      message(STATUS "Found Eigen3 at ${EIGEN3_INCLUDE_DIRS}")
     endif()
   endif()
 endif()
@@ -494,22 +909,58 @@ endif()
 
 #------------------------------------------------------------------------------------
 
-# add_compile_definitions(NDEBUG)
-
-if(MSVC)
-  message(STATUS "Setting up build for MSVC.")
+if (WIN32) # handles both x86 and x64
+  message(STATUS "Setting up build for Windows.")
   # Suppress min and max macros on windows
-  # Also define a few other things for windows
+  # Also define a few other things
   target_compile_definitions(katago PRIVATE NOMINMAX)
   target_compile_definitions(katago PRIVATE BYTE_ORDER=1234)
   target_compile_definitions(katago PRIVATE LITTLE_ENDIAN=1234)
   target_compile_definitions(katago PRIVATE BIG_ENDIAN=4321)
   # core/rand.cpp uses winsock for a gethostname
   target_link_libraries(katago ws2_32)
+  if (MINGW)
+    message(STATUS "Setting up build for mingw.")
+    if(USE_BACKEND STREQUAL "CUDA" OR USE_BACKEND STREQUAL "TENSORRT")
+      message(SEND_ERROR "CUDA and TENSORRT MinGW backends are not supported by NVIDIA, see https://forums.developer.nvidia.com/t/cuda-with-mingw-how-to-get-cuda-running-under-mingw")
+    endif()
 
+    # Make the build independent of MinGW dynamic libraries
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+      # Strip symbols. It significantly reduces binary size (makes it 20x smaller)
+      set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+    endif()
+
+    # It's needed for linking `PathRemoveFileSpecW` and probably other Windows API functions
+    target_link_libraries(katago shlwapi)
+
+    # For some reason MINGW doesn't define `HAVE_LONG_LONG` directive on his own unlike MSVC
+    # Define it because TCLAP library needs it. Actually it's part of standard and should be supported everywhere
+    include(CheckTypeSize)
+    check_type_size("long long" HAVE_LONG_LONG)
+    if(HAVE_LONG_LONG)
+      target_compile_definitions(katago PRIVATE HAVE_LONG_LONG)
+    endif()
+  endif()
+endif()
+
+if(MSVC)
+  message(STATUS "Setting up build for MSVC.")
   # Go ahead and suppress some MSVC warnings about sprintf and similar
   # things. They might be useful in some cases, but also are noisy.
   target_compile_definitions(katago PRIVATE _CRT_SECURE_NO_WARNINGS)
+
+  # MSVC toolset 14.40+ (VS 2022 17.10 and later, including VS 2026) made std::mutex's
+  # constructor constexpr, so mutexes are zero-initialized at compile time instead of being
+  # initialized at runtime via _Mtx_init_in_situ. If the process then loads a copy of
+  # msvcp140.dll older than 14.40 (outdated VC++ redistributable, or a stale msvcp140.dll
+  # sitting next to the exe or shipped by a GUI frontend, which takes precedence over the
+  # system one), the old _Mtx_lock misreads the zero-initialized mutex and crashes on the
+  # first lock. This define restores the old runtime initialization, which is compatible
+  # with both old and new runtimes. See https://github.com/microsoft/STL/issues/4978
+  target_compile_definitions(katago PRIVATE _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
   if(USE_AVX2)
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /arch:AVX2 -D__FMA__")
@@ -517,10 +968,8 @@ if(MSVC)
   endif()
 
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:8388608")
-endif()
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-  message(STATUS "Setting up build for GNU or Clang.")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  message(STATUS "Setting up build for GNU, Clang or MinGW.")
   if(NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES "(arm|aarch32|aarch64)"))
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -mfpmath=sse")
   else()
@@ -536,7 +985,15 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
   find_package (Threads REQUIRED)
   target_link_libraries(katago Threads::Threads)
 
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -pedantic -Wall -Wextra -Wno-sign-compare -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Wmissing-declarations -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls -Wshadow -Wstrict-overflow=1 -Wswitch-default -Wfloat-conversion -Wunused")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wno-sign-compare -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Wmissing-declarations -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls -Wshadow -Wstrict-overflow=1 -Wswitch-default -Wfloat-conversion -Wunused")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+
+  if(NOT CMAKE_CONFIGURATION_TYPES)
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _bt)
+    message(STATUS "CXX flags from build type: ${CMAKE_CXX_FLAGS_${_bt}}")
+  endif()
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     message(STATUS "Enabling GNU-specific build options.")
@@ -561,4 +1018,3 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
 endif()
 
 target_include_directories(katago PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-

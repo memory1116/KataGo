@@ -12,6 +12,7 @@
 #include "../program/setup.h"
 #include "../program/play.h"
 #include "../command/commandline.h"
+#include "../core/test.h"
 #include "../main.h"
 
 #include <chrono>
@@ -30,7 +31,7 @@ static ValueTargets makeForcedWinnerValueTarget(Player winner) {
     targets.lead = 0.0f;
     return targets;
   }
-  assert(winner == P_BLACK || winner == P_WHITE);
+  testAssert(winner == P_BLACK || winner == P_WHITE);
   targets.win = winner == P_WHITE ? 1.0f : 0.0f;
   targets.loss = winner == P_BLACK ? 1.0f : 0.0f;
   targets.noResult = 0.0f;
@@ -61,8 +62,7 @@ static void getNNEval(
   nnInputParams.drawEquivalentWinsForWhite = drawEquivalentWinsForWhite;
   nnInputParams.playoutDoublingAdvantage = (playoutDoublingAdvantagePla == getOpp(nextPla) ? -playoutDoublingAdvantage : playoutDoublingAdvantage);
   nnInputParams.maxHistory = maxHistory;
-  Board copy(board);
-  nnEval->evaluate(copy,hist,nextPla,nnInputParams,buf,skipCache,includeOwnerMap);
+  nnEval->evaluate(board,hist,nextPla,nnInputParams,buf,skipCache,includeOwnerMap);
 }
 
 // static double getPassProb(
@@ -387,7 +387,8 @@ static void parseSGFRank(
     throw StringError("Unable to parse rank: " + rankStr);
   }
 
-  assert((int)isKyu + (int)isKyuAma + (int)isDan + (int)isDanAma + (int)isPro + (int)isUnranked + (int)isUnknown == 1);
+  if((int)isKyu + (int)isKyuAma + (int)isDan + (int)isDanAma + (int)isPro + (int)isUnranked + (int)isUnknown != 1)
+    throw StringError("Unable to parse rank, ambiguous classification: " + rankStr);
 
   //Special handling for gogod ranks. Gogod labels pro dan as d, and amateur dan sometimes as "a" or "d ama".
   //Also Gogod kyu labels are not reliable to modern kyu since they could be historical very strong kyu.
@@ -450,18 +451,18 @@ struct KGSCsvLine {
   string unknownField; // Not sure what this is
   float result;
 
-  string getKey() {
+  string getKey() const {
     return date.toString() + "|$#" + sgfWUsername + "|$#" + sgfBUsername + "|" + Global::intToString(indexThisDayZeroIndexed);
   }
-  static string makeKey(SimpleDate date, string sgfWUsername, string sgfBUsername, int indexThisDayZeroIndexed) {
+  static string makeKey(const SimpleDate& date, const string &sgfWUsername, const string &sgfBUsername, int indexThisDayZeroIndexed) {
     return date.toString() + "|$#" + sgfWUsername + "|$#" + sgfBUsername + "|" + Global::intToString(indexThisDayZeroIndexed);
   }
 };
 
 static void readKgsCsv(
   const string& kgsCsv,
-  SimpleDate kgsCsvMinDate,
-  SimpleDate kgsCsvMaxDate,
+  const SimpleDate& kgsCsvMinDate,
+  const SimpleDate& kgsCsvMaxDate,
   Logger& logger,
   std::map<string,KGSCsvLine>& kgsCsvMap
 ) {
@@ -720,6 +721,11 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
 
   string searchRandSeed = Global::uint64ToString(seedRand.nextUInt64());
   SearchParams params = SearchParams::basicDecentParams();
+  //Pass-alive computation mode, applied uniformly to game replay/adjudication, featurization,
+  //training targets, and the searches below. Auto resolves to the model's declared preference.
+  if(cfg.contains("alwaysComputePassAliveUnderSuicideRules"))
+    params.alwaysComputePassAliveUnderSuicideRules = cfg.getEnabled("alwaysComputePassAliveUnderSuicideRules");
+  const bool alwaysComputePassAliveUnderSuicideRules = Search::resolveAlwaysComputePassAliveUnderSuicideRules(params, nnEval);
   params.maxVisits = maxVisits;
   params.chosenMoveTemperatureEarly = 0.1;
   params.chosenMoveTemperature = 0.1;
@@ -856,7 +862,7 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
       }
     }
 
-    std::unique_ptr<Sgf> sgfRaw = NULL;
+    std::unique_ptr<Sgf> sgfRaw = nullptr;
     XYSize xySize;
     try {
       sgfRaw = std::unique_ptr<Sgf>(Sgf::loadFile(fileName));
@@ -907,9 +913,9 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
     const string sizeStr = " (size " + Global::intToString(xySize.x) + "x" + Global::intToString(xySize.y) + ")";
     const string bSizeStr = Global::intToString(xySize.x) + "x" + Global::intToString(xySize.y);
 
-    std::unique_ptr<CompactSgf> sgf = NULL;
+    std::unique_ptr<CompactSgf> sgf = nullptr;
     try {
-      sgf = std::make_unique<CompactSgf>(sgfRaw.get());
+      sgf = std::make_unique<CompactSgf>(*sgfRaw);
     }
     catch(const StringError& e) {
       logger.write("Invalid SGF " + fileName + ": " + e.what());
@@ -1376,7 +1382,9 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
     Player nextPla;
     BoardHistory hist;
     try {
-      sgf->setupInitialBoardAndHist(rules, board, nextPla, hist);
+      //Set up before replaying so game replay/adjudication, featurization, and targets are all uniform
+      //with each other and with the searches (whose setPosition resolves to the same value from params).
+      sgf->setupInitialBoardAndHist(rules, board, nextPla, hist, alwaysComputePassAliveUnderSuicideRules);
     }
     catch(const StringError& e) {
       logger.write("Bad initial setup in sgf " + fileName + " " + e.what());
@@ -1924,8 +1932,8 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
 
       Move move = sgfMoves[m];
       moves.push_back(move.loc);
-      policyTargets.push_back(vector<PolicyTargetMove>());
-      policyTargets[policyTargets.size()-1].push_back(PolicyTargetMove(move.loc,1));
+      policyTargets.emplace_back();
+      policyTargets[policyTargets.size()-1].emplace_back(move.loc,1);
 
       // We want policies learned from human moves to be compatible with KataGo using them in a search which may use
       // stricter computer rules. So if a player passes, we do NOT train on it. And do NOT train on the opponent's response
@@ -2064,7 +2072,7 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
           Loc moveLoc = search->runWholeSearchAndGetMove(nextPla);
 
           moves.push_back(moveLoc);
-          policyTargets.push_back(vector<PolicyTargetMove>());
+          policyTargets.emplace_back();
           Play::extractPolicyTarget(policyTargets[policyTargets.size()-1],search,search->rootNode,locsBuf,playSelectionValuesBuf);
 
           // KataGo cleanup moves get weighted a tiny bit, so we can preserve the instinct to cleanup
@@ -2072,8 +2080,7 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
           trainingWeights.push_back(0.05);
 
           bool suc = hist.isLegal(board,moveLoc,nextPla);
-          (void)suc;
-          assert(suc);
+          testAssert(suc);
 
           bool preventEncore = false;
           hist.makeBoardMoveAssumeLegal(board,moveLoc,nextPla,NULL,preventEncore);
@@ -2098,7 +2105,7 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
           // Ownership stuff!
           hasOwnershipTargets = true;
           hists[hists.size()-1].endAndScoreGameNow(board,finalOwnership);
-          board.calculateArea(finalFullArea, true, true, true, hist.rules.multiStoneSuicideLegal);
+          board.calculateArea(finalFullArea, true, true, true, hist.suicideLegalForPassAlive());
           NNInputs::fillScoring(board,finalOwnership,hist.rules.taxRule == Rules::TAX_ALL,finalWhiteScoring);
 
           // Make sure KataGo didn't leave huge unscored regions due to passing weirdness, and make sure the scoring agrees with
@@ -2300,7 +2307,7 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
     // Only fill in the lead when we have ownership targets, with the game scored correctly.
     // Lead is going to be pretty high variance,
     if(hasOwnershipTargets) {
-      assert(!hasForcedWinner);
+      testAssert(!hasForcedWinner);
       for(size_t m = 0; m<whiteValueTargets.size()-1; m++) {
         const ValueTargets& finalTargets = whiteValueTargets[whiteValueTargets.size()-1];
         whiteValueTargets[m].hasLead = true;
@@ -2438,7 +2445,7 @@ int MainCmds::writetrainingdata(const vector<string>& args) {
   );
 
   auto printGameCountsMap = [&](
-    const std::map<string,int64_t> counts,
+    const std::map<string,int64_t>& counts,
     const string& label,
     bool sortByCount,
     std::map<string,int64_t>* accCounts

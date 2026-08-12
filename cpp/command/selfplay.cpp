@@ -3,6 +3,7 @@
 #include "../core/fileutils.h"
 #include "../core/makedir.h"
 #include "../core/config_parser.h"
+#include "../core/timer.h"
 #include "../dataio/sgf.h"
 #include "../dataio/trainingwrite.h"
 #include "../dataio/loadmodel.h"
@@ -12,6 +13,7 @@
 #include "../program/play.h"
 #include "../program/selfplaymanager.h"
 #include "../command/commandline.h"
+#include "../core/test.h"
 #include "../main.h"
 
 #include <chrono>
@@ -126,6 +128,9 @@ int MainCmds::selfplay(const vector<string>& args) {
   logger.write("Loaded all config stuff, starting self play");
   if(!logger.isLoggingToStdout())
     cout << "Loaded all config stuff, starting self play" << endl;
+
+  //Time the whole self-play run for reporting overall computational throughput.
+  ClockTimer selfplayTimer;
 
   if(!std::atomic_is_lock_free(&shouldStop))
     throw StringError("shouldStop is not lock free, signal-quitting mechanism for terminating matches will NOT work!");
@@ -260,7 +265,7 @@ int MainCmds::selfplay(const vector<string>& args) {
       if(shouldStop.load())
         break;
       NNEvaluator* nnEval = manager->acquireLatest();
-      assert(nnEval != NULL);
+      testAssert(nnEval != NULL);
 
       if(prevModelName != nnEval->getModelName()) {
         prevModelName = nnEval->getModelName();
@@ -270,7 +275,7 @@ int MainCmds::selfplay(const vector<string>& args) {
       //Callback that runGame will call periodically to ask us if we have a new neural net
       std::function<NNEvaluator*()> checkForNewNNEval = [&manager,&nnEval,&prevModelName,&logger,&threadIdx]() -> NNEvaluator* {
         NNEvaluator* newNNEval = manager->acquireLatest();
-        assert(newNNEval != NULL);
+        testAssert(newNNEval != NULL);
         if(newNNEval == nnEval) {
           manager->release(newNNEval);
           return NULL;
@@ -353,8 +358,9 @@ int MainCmds::selfplay(const vector<string>& args) {
   };
 
   vector<std::thread> threads;
+  threads.reserve(numGameThreads);
   for(int i = 0; i<numGameThreads; i++) {
-    threads.push_back(std::thread(gameLoopProtected,i));
+    threads.emplace_back(gameLoopProtected,i);
   }
   std::thread modelLoadLoopThread(modelLoadLoopProtected);
 
@@ -377,6 +383,10 @@ int MainCmds::selfplay(const vector<string>& args) {
 
   //At this point, nothing else except possibly data write loops are running, within the selfplay manager.
   delete manager;
+
+  //Overall self-play totals (per-model NN/data/moves breakdowns are logged above by the manager).
+  logger.write("Total games: " + Global::int64ToString(numGamesStarted.load(std::memory_order_relaxed)));
+  logger.write("Total selfplay runtime (seconds): " + Global::doubleToString(selfplayTimer.getSeconds()));
 
   //Delete and clean up everything else
   NeuralNet::globalCleanup();

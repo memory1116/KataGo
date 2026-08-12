@@ -17,6 +17,7 @@
 #include "../program/selfplaymanager.h"
 #include "../tests/tinymodel.h"
 #include "../tests/tests.h"
+#include "../core/test.h"
 #include "../command/commandline.h"
 #include "../main.h"
 
@@ -142,6 +143,18 @@ static void runAndUploadSingleGame(
 
   istringstream taskCfgIn(gameTask.task.config);
   ConfigParser taskCfg(taskCfgIn);
+  const std::string overrides = gameTask.repIdx < gameTask.task.overrides.size() ? gameTask.task.overrides[gameTask.repIdx] : std::string();
+  try {
+    if(overrides.size() > 0) {
+      map<string,string> newkvs = ConfigParser::parseCommaSeparated(overrides);
+      taskCfg.overrideKeys(newkvs);
+    }
+  }
+  catch(StringError& e) {
+    cerr << "Error applying overrides " << overrides << endl;
+    cerr << e.what() << endl;
+    throw;
+  }
 
   NNEvaluator* nnEvalBlack = gameTask.nnEvalBlack;
   NNEvaluator* nnEvalWhite = gameTask.nnEvalWhite;
@@ -261,7 +274,7 @@ static void runAndUploadSingleGame(
 
       // Usual analysis response fields
       ret["turnNumber"] = hist.moveHistory.size();
-      search->getAnalysisJson(perspective,analysisPVLen,preventEncore,true,alwaysIncludeOwnership,false,false,false,false,ret);
+      search->getAnalysisJson(perspective,analysisPVLen,preventEncore,true,alwaysIncludeOwnership,false,false,false,false,false,ret);
       std::cout << ret.dump() + "\n" << std::flush; // no endl due to race conditions
     }
 
@@ -316,38 +329,43 @@ static void runAndUploadSingleGame(
       if(gameTask.task.doWriteTrainingData) {
         //Pre-upload, verify that the GPU is okay.
         Tests::runCanaryTests(nnEvalBlack, NNInputs::SYMMETRY_NOTSPECIFIED, false);
+
+        string resultingFilename;
+        int64_t numDataRows = 0;
+        bool producedFile = false;
         gameTask.blackManager->withDataWriters(
           nnEvalBlack,
-          [gameData,&gameTask,gameIdx,&sgfFile,&connection,&logger,&shouldStopFunc,&posSample](
+          [gameData,&resultingFilename,&numDataRows,&producedFile](
             TrainingDataWriter* tdataWriter, std::ofstream* sgfOut
           ) {
             (void)sgfOut;
-            assert(tdataWriter->isEmpty());
+            testAssert(tdataWriter->isEmpty());
             tdataWriter->writeGame(*gameData);
-            string resultingFilename;
-            int64_t numDataRows = tdataWriter->numRowsInBuffer();
-            bool producedFile = tdataWriter->flushIfNonempty(resultingFilename);
-            //It's possible we'll have zero data if the game started in a nearly finished position and cheap search never
-            //gave us a real turn of search, in which case just ignore that game.
-            if(producedFile) {
-              bool suc = false;
-              try {
-                suc = connection->uploadTrainingGameAndData(gameTask.task,gameData,posSample,sgfFile,resultingFilename,numDataRows,retryOnFailure,shouldStopFunc);
-              }
-              catch(StringError& e) {
-                logger.write(string("Giving up uploading training game and data due to error:\n") + e.what());
-                suc = false;
-              }
-              if(suc)
-                logger.write(
-                  "Finished game " + Global::int64ToString(gameIdx)  + " (training), uploaded sgf " + sgfFile + " and training data " + resultingFilename
-                  + " (" + Global::int64ToString(numDataRows) + " rows)"
-                );
-            }
-            else {
-              logger.write("Finished game " + Global::int64ToString(gameIdx) + " (training), skipping uploading sgf " + sgfFile + " since it's an empty game");
-            }
-          });
+            numDataRows = tdataWriter->numRowsInBuffer();
+            producedFile = tdataWriter->flushIfNonempty(resultingFilename);
+          }
+        );
+
+        //It's possible we'll have zero data if the game started in a nearly finished position and cheap search never
+        //gave us a real turn of search, in which case just ignore that game.
+        if(producedFile) {
+          bool suc = false;
+          try {
+            suc = connection->uploadTrainingGameAndData(gameTask.task,gameData,posSample,sgfFile,resultingFilename,numDataRows,retryOnFailure,shouldStopFunc);
+          }
+          catch(StringError& e) {
+            logger.write(string("Giving up uploading training game and data due to error:\n") + e.what());
+            suc = false;
+          }
+          if(suc)
+            logger.write(
+              "Finished game " + Global::int64ToString(gameIdx)  + " (training), uploaded sgf " + sgfFile + " and training data " + resultingFilename
+              + " (" + Global::int64ToString(numDataRows) + " rows)"
+            );
+        }
+        else {
+          logger.write("Finished game " + Global::int64ToString(gameIdx) + " (training), skipping uploading sgf " + sgfFile + " since it's an empty game");
+        }
       }
       else {
         bool suc = false;
@@ -533,7 +551,7 @@ int MainCmds::contribute(const vector<string>& args) {
     maxSimultaneousGames = 16;
   }
   else {
-    maxSimultaneousGames = userCfg->getInt("maxSimultaneousGames", 1, 4000);
+    maxSimultaneousGames = userCfg->getInt("maxSimultaneousGames", 1, 16000);
   }
   bool onlyPlayRatingMatches = false;
   if(userCfg->contains("onlyPlayRatingMatches")) {
@@ -766,7 +784,7 @@ int MainCmds::contribute(const vector<string>& args) {
 
   auto runGameLoop = [
     &logger,forkData,&gameSeedBase,&gameTaskQueue,&numGamesStarted,&sgfsDir,&connection,
-    &numRatingGamesActive,&numMovesPlayed,&watchOngoingGameInFile,&watchOngoingGameInFileName,
+    &numMovesPlayed,&watchOngoingGameInFile,&watchOngoingGameInFileName,
     &shouldStopFunc,&shouldStopGracefullyFunc,
     &shouldPause,
     &logGamesAsJson, &alwaysIncludeOwnership, &warnTaskUnusedKeys,
@@ -891,7 +909,7 @@ int MainCmds::contribute(const vector<string>& args) {
         NNPos::MAX_BOARD_LEN,NNPos::MAX_BOARD_LEN,defaultMaxBatchSize,defaultRequireExactNNLen,disableFP16,
         Setup::SETUP_FOR_DISTRIBUTED
       );
-      assert(!nnEval->isNeuralNetLess() || modelFile == "/dev/null");
+      testAssert(!nnEval->isNeuralNetLess() || modelFile == "/dev/null");
       logger.write("Loaded latest neural net " + modelName + " from: " + modelFile);
     }
 
@@ -948,7 +966,7 @@ int MainCmds::contribute(const vector<string>& args) {
       }
       if(!success) {
         logger.write("Warning: large FP16 errors, using FP32 instead");
-        assert(nnEval32 != nnEval);
+        testAssert(nnEval32 != nnEval);
         delete nnEval;
         nnEval = nnEval32;
       }
@@ -994,7 +1012,7 @@ int MainCmds::contribute(const vector<string>& args) {
   //Just start based on selfplay games, rating games will poke in as needed
   vector<std::thread> gameThreads;
   for(int i = 0; i<maxSimultaneousGames; i++) {
-    gameThreads.push_back(std::thread(runGameLoopProtected,i));
+    gameThreads.emplace_back(runGameLoopProtected,i);
   }
 
   //-----------------------------------------------------------------------------------------------------------------
@@ -1368,7 +1386,7 @@ int MainCmds::contribute(const vector<string>& args) {
   int numTaskLoopThreads = 4;
   vector<std::thread> taskLoopThreads;
   for(int i = 0; i<numTaskLoopThreads; i++) {
-    taskLoopThreads.push_back(std::thread(taskLoopProtected));
+    taskLoopThreads.emplace_back(taskLoopProtected);
   }
 
   //Allocate thread using new to make sure its memory lasts beyond main(), and just let it leak as we exit.

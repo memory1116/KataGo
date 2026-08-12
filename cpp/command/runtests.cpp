@@ -44,6 +44,7 @@ int MainCmds::runtests(const vector<string>& args) {
   Tests::runBoardAreaTests();
 
   Tests::runRulesTests();
+  Tests::runPassAliveSuicideModeTests();
 
   Tests::runBoardUndoTest();
   Tests::runBoardHandicapTest();
@@ -76,14 +77,17 @@ int MainCmds::runoutputtests(const vector<string>& args) {
   ScoreValue::initTables();
 
   Tests::runNNInputsV3V4Tests();
+  Tests::runNNBatchingDispatcherTests();
   Tests::runNNLessSearchTests();
   Tests::runTrainingWriteTests();
+  Tests::runPassAliveSuicideGameTests();
   Tests::runTimeControlsTests();
   Tests::runScoreTests();
   Tests::runNNSymmetryTests();
   Tests::runSgfFileTests();
   Tests::runCollectFilesTests();
   Tests::runLoadModelTests();
+  Tests::runTaskParsingTests();
   Tests::runBookTests();
 
   ScoreValue::freeTables();
@@ -332,6 +336,113 @@ int MainCmds::runnnbatchingtest(const vector<string>& args) {
 }
 
 
+int MainCmds::runnngtpstresstest(const vector<string>& args) {
+  Board::initHash();
+  ScoreValue::initTables();
+
+  ConfigParser cfg;
+  string modelFile;
+  string corpusFile;
+  string referenceFile;
+  int numRequests;
+  int numPasses;
+  int numRequestThreads;
+  int numVerifyThreads;
+  try {
+    KataGoCommandLine cmd(
+      "Replay search-shaped requests through an evaluator configured exactly like GTP, "
+      "checking every result asynchronously against an offline full-FP32 replay reference."
+    );
+    cmd.addConfigFileArg("","",true);
+    cmd.addModelFileArg();
+    cmd.addOverrideConfigArg();
+
+    TCLAP::ValueArg<int> requestsArg(
+      "","requests","Number of deterministic positions in one pass (default 8192).",
+      false,8192,"N"
+    );
+    TCLAP::ValueArg<int> passesArg(
+      "","passes","Number of concurrent replay passes; 0 runs until interrupted (default 100).",
+      false,100,"N"
+    );
+    TCLAP::ValueArg<int> requestThreadsArg(
+      "","request-threads",
+      "Search-side producer threads; 0 uses batchSize * (inferenceSlots + 1) + 32 (default 0).",
+      false,0,"N"
+    );
+    TCLAP::ValueArg<int> verifyThreadsArg(
+      "","verify-threads","CPU verifier sidecar threads (default 4).",
+      false,4,"N"
+    );
+    TCLAP::ValueArg<string> corpusArg(
+      "","corpus","Path to the 8192-row .npz input corpus (required).",
+      true,"","FILE"
+    );
+    TCLAP::ValueArg<string> referenceArg(
+      "","reference","Path to the offline full-FP32 .krnn result (required).",
+      true,"","FILE"
+    );
+    cmd.add(referenceArg);
+    cmd.add(corpusArg);
+    cmd.add(verifyThreadsArg);
+    cmd.add(requestThreadsArg);
+    cmd.add(passesArg);
+    cmd.add(requestsArg);
+    cmd.parseArgs(args);
+
+    cmd.getConfig(cfg);
+    modelFile = cmd.getModelFile();
+    corpusFile = corpusArg.getValue();
+    referenceFile = referenceArg.getValue();
+    numRequests = requestsArg.getValue();
+    numPasses = passesArg.getValue();
+    numRequestThreads = requestThreadsArg.getValue();
+    numVerifyThreads = verifyThreadsArg.getValue();
+  }
+  catch(TCLAP::ArgException& e) {
+    cerr << "Error: " << e.error() << " for argument " << e.argId() << endl;
+    ScoreValue::freeTables();
+    return 1;
+  }
+  if(numRequests <= 0 || numPasses < 0 || numRequestThreads < 0 || numVerifyThreads <= 0) {
+    cerr << "requests and verify-threads must be positive; passes and request-threads must be nonnegative" << endl;
+    ScoreValue::freeTables();
+    return 1;
+  }
+
+  const bool logToStdoutDefault = true;
+  const bool logToStderrDefault = false;
+  const bool logTime = false;
+  Logger logger(&cfg,logToStdoutDefault,logToStderrDefault,logTime);
+  Rand seedRand("runnngtpstresstest");
+  SearchParams params = Setup::loadSingleParams(cfg,Setup::SETUP_FOR_GTP);
+
+  Setup::initializeSession(cfg);
+  const int expectedConcurrentEvals = params.numThreads;
+  const int defaultMaxBatchSize = std::max(8,((expectedConcurrentEvals+3)/4)*4);
+  const bool defaultRequireExactNNLen = true;
+  const bool disableFP16 = false;
+  const string expectedSha256 = "";
+  unique_ptr<NNEvaluator> nnEval(Setup::initializeNNEvaluator(
+    modelFile,modelFile,expectedSha256,cfg,logger,seedRand,expectedConcurrentEvals,
+    Board::MAX_LEN,Board::MAX_LEN,defaultMaxBatchSize,defaultRequireExactNNLen,disableFP16,
+    Setup::SETUP_FOR_GTP
+  ));
+  logger.write(
+    "Loaded GTP stress evaluator: batch " + Global::intToString(nnEval->getCurrentBatchSize()) +
+    ", inference slots " + Global::intToString(nnEval->getNumServerThreads())
+  );
+
+  Tests::runNNGTPRequestStress(
+    nnEval.get(),corpusFile,referenceFile,
+    numRequests,numPasses,numRequestThreads,numVerifyThreads
+  );
+  nnEval.reset();
+  ScoreValue::freeTables();
+  return 0;
+}
+
+
 int MainCmds::runownershiptests(const vector<string>& args) {
   if(args.size() != 3) {
     cerr << "Must supply exactly two arguments: GTP_CONFIG MODEL_FILE" << endl;
@@ -403,18 +514,36 @@ int MainCmds::runtinynntests(const vector<string>& args) {
 }
 
 int MainCmds::runnnevalcanarytests(const vector<string>& args) {
-  if(args.size() != 4) {
-    cerr << "Must supply exactly three arguments: GTP_CONFIG MODEL_FILE SYMMETRY" << endl;
-    return 1;
-  }
-  const string& cfgFile = args[1];
-  const string& modelFile = args[2];
-  const int symmetry = Global::stringToInt(args[3]);
-
   Board::initHash();
   ScoreValue::initTables();
 
-  ConfigParser cfg(cfgFile);
+  ConfigParser cfg;
+  string modelFile;
+  int symmetry;
+  try {
+    KataGoCommandLine cmd("Run neural net eval canary sanity-check tests on a model.");
+    cmd.addConfigFileArg("","gtp_example.cfg");
+    cmd.addModelFileArg();
+    cmd.addOverrideConfigArg();
+
+    TCLAP::ValueArg<int> symmetryArg(
+      "","symmetry","Symmetry 0-7 to test, or -1 to test all 8 symmetries (default -1).",false,-1,"SYM");
+    cmd.add(symmetryArg);
+
+    cmd.parseArgs(args);
+
+    cmd.getConfig(cfg);
+    modelFile = cmd.getModelFile();
+    symmetry = symmetryArg.getValue();
+  }
+  catch (TCLAP::ArgException &e) {
+    cerr << "Error: " << e.error() << " for argument " << e.argId() << endl;
+    return 1;
+  }
+  if(symmetry < -1 || symmetry > 7) {
+    cerr << "symmetry must be -1 (all) or in [0,7]" << endl;
+    return 1;
+  }
 
   const bool logToStdoutDefault = true;
   const bool logToStderrDefault = false;
@@ -524,7 +653,7 @@ int MainCmds::runbeginsearchspeedtest(const vector<string>& args) {
 
   Player nextPla = P_BLACK;
   rules.komi = 6.5;
-  BoardHistory hist(board,nextPla,rules,0);
+  BoardHistory hist(board,nextPla,rules,0,false);
 
   bot->setPosition(nextPla,board,hist);
 
@@ -648,7 +777,7 @@ int MainCmds::runownershipspeedtest(const vector<string>& args) {
 
   Player nextPla = P_BLACK;
   rules.komi = 7.0;
-  BoardHistory hist(board,nextPla,rules,0);
+  BoardHistory hist(board,nextPla,rules,0,false);
 
   bot->setPosition(nextPla,board,hist);
   bot->setAlwaysIncludeOwnerMap(true);
@@ -754,4 +883,3 @@ int MainCmds::runconfigtests(const vector<string>& args) {
   Tests::runParseAllConfigsTest();
   return 0;
 }
-

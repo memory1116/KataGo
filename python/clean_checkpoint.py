@@ -20,7 +20,7 @@ args = vars(parser.parse_args())
 checkpoint_path = args["checkpoint"]
 output_path = args["output"]
 
-data = torch.load(checkpoint_path,map_location="cpu")
+data = katago.train.load_model.load_checkpoint(checkpoint_path)
 
 if "optimizer" in data:
     del data["optimizer"]
@@ -35,6 +35,8 @@ if "train_state" in data:
         del data["train_state"]["old_train_data_dirs"]
     if "data_files_used" in data["train_state"]:
         del data["train_state"]["data_files_used"]
+    if "rev_data_files_remaining" in data["train_state"]:
+        del data["train_state"]["rev_data_files_remaining"]
 
 if "last_val_metrics" in data:
     del data["last_val_metrics"]

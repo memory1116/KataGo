@@ -1,8 +1,10 @@
 #include "../program/setup.h"
 
 #include "../core/datetime.h"
+#include "../core/test.h"
 #include "../core/makedir.h"
 #include "../core/fileutils.h"
+#include "../neuralnet/cudatacticplan.h"
 #include "../neuralnet/nninterface.h"
 #include "../search/patternbonustable.h"
 
@@ -55,7 +57,7 @@ NNEvaluator* Setup::initializeNNEvaluator(
       disableFP16,
       setupFor
     );
-  assert(nnEvals.size() == 1);
+  testAssert(nnEvals.size() == 1);
   return nnEvals[0];
 }
 
@@ -75,8 +77,8 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
   setup_for_t setupFor
 ) {
   vector<NNEvaluator*> nnEvals;
-  assert(nnModelNames.size() == nnModelFiles.size());
-  assert(expectedSha256s.size() == 0 || expectedSha256s.size() == nnModelFiles.size());
+  testAssert(nnModelNames.size() == nnModelFiles.size());
+  testAssert(expectedSha256s.size() == 0 || expectedSha256s.size() == nnModelFiles.size());
 
   #if defined(USE_CUDA_BACKEND)
   string backendPrefix = "cuda";
@@ -103,7 +105,7 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
     string idxStr = Global::uint64ToString(i);
     const string& nnModelName = nnModelNames[i];
     const string& nnModelFile = nnModelFiles[i];
-    const string& expectedSha256 = expectedSha256s.size() > 0 ? expectedSha256s[i]: "";
+    string expectedSha256 = expectedSha256s.size() > 0 ? expectedSha256s[i]: "";
 
     bool debugSkipNeuralNetDefault = (nnModelFile == "/dev/null");
     bool debugSkipNeuralNet =
@@ -139,6 +141,15 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
         requireExactNNLen = cfg.getBool("requireMaxBoardSize" + idxStr);
       else if(cfg.contains("requireMaxBoardSize"))
         requireExactNNLen = cfg.getBool("requireMaxBoardSize");
+    }
+
+    unique_ptr<CudaTacticPlan::Plan> cudaTacticPlan =
+      CudaTacticPlan::loadAndApply(cfg,logger,nnXLen,nnYLen,requireExactNNLen);
+    if(cudaTacticPlan != nullptr) {
+      if(expectedSha256 != "" &&
+         Global::toLower(expectedSha256) != Global::toLower(cudaTacticPlan->modelSha256))
+        throw StringError("Configured model SHA-256 differs from the CUDA tactic plan");
+      expectedSha256 = cudaTacticPlan->modelSha256;
     }
 
     bool inputsUseNHWC = backendPrefix == "opencl" || backendPrefix == "trt" || backendPrefix == "metal" ? false : true;
@@ -217,15 +228,15 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
       else
         gpuIdxByServerThread.push_back(-1);
     }
+    if(cudaTacticPlan != nullptr)
+      CudaTacticPlan::validateDevices(*cudaTacticPlan,gpuIdxByServerThread);
 
     string homeDataDirOverride = loadHomeDataDirOverride(cfg);
 
-    string openCLTunerFile;
-    if(cfg.contains("openclTunerFile"))
-      openCLTunerFile = cfg.getString("openclTunerFile");
-    bool openCLReTunePerBoardSize = false;
-    if(cfg.contains("openclReTunePerBoardSize"))
-      openCLReTunePerBoardSize = cfg.getBool("openclReTunePerBoardSize");
+    // Backend-specific options (e.g. openclTunerFile, cudaDisableGraphSDPA) are read directly by the
+    // relevant compute backend off of cfg (see createComputeContext). Because they follow the backend
+    // prefix convention, the getBackendPrefixes() loop above already marks them used for the backends
+    // that don't read them, so no explicit mark-used is needed here.
 
     enabled_t useFP16Mode = enabled_t::Auto;
     if(cfg.contains(backendPrefix+"UseFP16-"+idxStr))
@@ -237,16 +248,6 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
     else if(cfg.contains("useFP16"))
       useFP16Mode = cfg.getEnabled("useFP16");
 
-    enabled_t useNHWCMode = enabled_t::Auto;
-    if(cfg.contains(backendPrefix+"UseNHWC"+idxStr))
-      useNHWCMode = cfg.getEnabled(backendPrefix+"UseNHWC"+idxStr);
-    else if(cfg.contains("useNHWC"+idxStr))
-      useNHWCMode = cfg.getEnabled("useNHWC"+idxStr);
-    else if(cfg.contains(backendPrefix+"UseNHWC"))
-      useNHWCMode = cfg.getEnabled(backendPrefix+"UseNHWC");
-    else if(cfg.contains("useNHWC"))
-      useNHWCMode = cfg.getEnabled("useNHWC");
-
     int forcedSymmetry = -1;
     if(setupFor != SETUP_FOR_DISTRIBUTED && cfg.contains("nnForcedSymmetry"))
       forcedSymmetry = cfg.getInt("nnForcedSymmetry",0,SymmetryHelpers::NUM_SYMMETRIES-1);
@@ -254,13 +255,15 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
     logger.write(
       "After dedups: nnModelFile" + idxStr + " = " + nnModelFile
       + " useFP16 " + useFP16Mode.toString()
-      + " useNHWC " + useNHWCMode.toString()
     );
+
+    const bool setupForAnyBenchmark =
+      setupFor == SETUP_FOR_BENCHMARK || setupFor == SETUP_FOR_BENCHMARKNN;
 
     int nnCacheSizePowerOfTwo =
       cfg.contains("nnCacheSizePowerOfTwo") ? cfg.getInt("nnCacheSizePowerOfTwo", -1, 48) :
       setupFor == SETUP_FOR_GTP ? 20 :
-      setupFor == SETUP_FOR_BENCHMARK ? 20 :
+      setupForAnyBenchmark ? 20 :
       setupFor == SETUP_FOR_DISTRIBUTED ? 19 :
       setupFor == SETUP_FOR_MATCH ? 21 :
       setupFor == SETUP_FOR_ANALYSIS ? 23 :
@@ -269,7 +272,7 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
     int nnMutexPoolSizePowerOfTwo =
       cfg.contains("nnMutexPoolSizePowerOfTwo") ? cfg.getInt("nnMutexPoolSizePowerOfTwo", -1, 24) :
       setupFor == SETUP_FOR_GTP ? 16 :
-      setupFor == SETUP_FOR_BENCHMARK ? 16 :
+      setupForAnyBenchmark ? 16 :
       setupFor == SETUP_FOR_DISTRIBUTED ? 16 :
       setupFor == SETUP_FOR_MATCH ? 17 :
       setupFor == SETUP_FOR_ANALYSIS ? 17 :
@@ -277,7 +280,7 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
 
 #ifndef USE_EIGEN_BACKEND
     int nnMaxBatchSize;
-    if(setupFor == SETUP_FOR_BENCHMARK || setupFor == SETUP_FOR_DISTRIBUTED) {
+    if(setupForAnyBenchmark || setupFor == SETUP_FOR_DISTRIBUTED) {
       nnMaxBatchSize = defaultMaxBatchSize;
     }
     else if(defaultMaxBatchSize > 0) {
@@ -298,9 +301,20 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
     (void)defaultMaxBatchSize;
 #endif
 
+    if(cudaTacticPlan != nullptr && nnMaxBatchSize != cudaTacticPlan->batchSize)
+      throw StringError(
+        "Evaluator batch size B" + Global::intToString(nnMaxBatchSize) +
+        " differs from CUDA tactic plan B" + Global::intToString(cudaTacticPlan->batchSize)
+      );
+
     int defaultSymmetry = forcedSymmetry >= 0 ? forcedSymmetry : 0;
     if(disableFP16)
       useFP16Mode = enabled_t::False;
+
+    //Pre-warm lazily-compiled backend graphs (e.g. cuDNN SDPA plans for transformer models) when each
+    //server thread's handle is created, so the first searches aren't stalled. On by default.
+    bool disableWarmup =
+      cfg.contains("cudaDisableWarmup") ? cfg.getBool("cudaDisableWarmup") : false;
 
     NNEvaluator* nnEval = new NNEvaluator(
       nnModelName,
@@ -315,19 +329,22 @@ vector<NNEvaluator*> Setup::initializeNNEvaluators(
       nnCacheSizePowerOfTwo,
       nnMutexPoolSizePowerOfTwo,
       debugSkipNeuralNet,
-      openCLTunerFile,
       homeDataDirOverride,
-      openCLReTunePerBoardSize,
       useFP16Mode,
-      useNHWCMode,
       numNNServerThreadsPerModel,
       gpuIdxByServerThread,
       nnRandSeed,
       (forcedSymmetry >= 0 ? false : nnRandomize),
-      defaultSymmetry
+      defaultSymmetry,
+      disableWarmup,
+      cfg
     );
 
-    nnEval->spawnServerThreads();
+    // benchmarknn creates its own externally-owned streams and compute handles
+    // in benchmarkPureForward. Starting the normal evaluator threads here only
+    // to kill them immediately duplicates model-handle setup for every tactic.
+    if(setupFor != SETUP_FOR_BENCHMARKNN)
+      nnEval->spawnServerThreads();
 
     nnEvals.push_back(nnEval);
   }
@@ -489,8 +506,8 @@ vector<SearchParams> Setup::loadParams(
     else if(cfg.contains("cpuctExplorationBase"))   params.cpuctExplorationBase = cfg.getDouble("cpuctExplorationBase",        10.0, 100000.0);
     else                                            params.cpuctExplorationBase = 500.0;
 
-    if(cfg.contains("cpuctUtilityStdevPrior"+idxStr)) params.cpuctUtilityStdevPrior = cfg.getDouble("cpuctUtilityStdevPrior"+idxStr, 0.0, 10.0);
-    else if(cfg.contains("cpuctUtilityStdevPrior"))   params.cpuctUtilityStdevPrior = cfg.getDouble("cpuctUtilityStdevPrior",        0.0, 10.0);
+    if(cfg.contains("cpuctUtilityStdevPrior"+idxStr)) params.cpuctUtilityStdevPrior = cfg.getDouble("cpuctUtilityStdevPrior"+idxStr, 1e-8, 10.0);
+    else if(cfg.contains("cpuctUtilityStdevPrior"))   params.cpuctUtilityStdevPrior = cfg.getDouble("cpuctUtilityStdevPrior",        1e-8, 10.0);
     else                                              params.cpuctUtilityStdevPrior = 0.40;
     if(cfg.contains("cpuctUtilityStdevPriorWeight"+idxStr)) params.cpuctUtilityStdevPriorWeight = cfg.getDouble("cpuctUtilityStdevPriorWeight"+idxStr, 0.0, 100.0);
     else if(cfg.contains("cpuctUtilityStdevPriorWeight"))   params.cpuctUtilityStdevPriorWeight = cfg.getDouble("cpuctUtilityStdevPriorWeight",        0.0, 100.0);
@@ -656,6 +673,9 @@ vector<SearchParams> Setup::loadParams(
     if(cfg.contains("fillDameBeforePass"+idxStr)) params.fillDameBeforePass = cfg.getBool("fillDameBeforePass"+idxStr);
     else if(cfg.contains("fillDameBeforePass"))   params.fillDameBeforePass = cfg.getBool("fillDameBeforePass");
     else                                          params.fillDameBeforePass = false;
+    if(cfg.contains("alwaysComputePassAliveUnderSuicideRules"+idxStr)) params.alwaysComputePassAliveUnderSuicideRules = cfg.getEnabled("alwaysComputePassAliveUnderSuicideRules"+idxStr);
+    else if(cfg.contains("alwaysComputePassAliveUnderSuicideRules"))   params.alwaysComputePassAliveUnderSuicideRules = cfg.getEnabled("alwaysComputePassAliveUnderSuicideRules");
+    else                                                               params.alwaysComputePassAliveUnderSuicideRules = enabled_t::Auto;
     //Controlled by GTP directly, not used in any other mode
     params.avoidMYTDaggerHackPla = C_EMPTY;
     if(cfg.contains("wideRootNoise"+idxStr)) params.wideRootNoise = cfg.getDouble("wideRootNoise"+idxStr, 0.0, 5.0);
@@ -708,6 +728,14 @@ vector<SearchParams> Setup::loadParams(
     if(cfg.contains("subtreeValueBiasWeightExponent"+idxStr)) params.subtreeValueBiasWeightExponent = cfg.getDouble("subtreeValueBiasWeightExponent"+idxStr, 0.0, 1.0);
     else if(cfg.contains("subtreeValueBiasWeightExponent")) params.subtreeValueBiasWeightExponent = cfg.getDouble("subtreeValueBiasWeightExponent", 0.0, 1.0);
     else params.subtreeValueBiasWeightExponent = 0.85;
+
+    if(cfg.contains("useEvalCache"+idxStr)) params.useEvalCache = cfg.getBool("useEvalCache"+idxStr);
+    else if(cfg.contains("useEvalCache"))   params.useEvalCache = cfg.getBool("useEvalCache");
+    else                                    params.useEvalCache = false;
+
+    if(cfg.contains("evalCacheMinVisits"+idxStr)) params.evalCacheMinVisits = cfg.getInt64("evalCacheMinVisits"+idxStr, (int64_t)1, (int64_t)1 << 50);
+    else if(cfg.contains("evalCacheMinVisits"))   params.evalCacheMinVisits = cfg.getInt64("evalCacheMinVisits",        (int64_t)1, (int64_t)1 << 50);
+    else                                          params.evalCacheMinVisits = 100;
 
     if(cfg.contains("nodeTableShardsPowerOfTwo"+idxStr)) params.nodeTableShardsPowerOfTwo = cfg.getInt("nodeTableShardsPowerOfTwo"+idxStr, 8, 24);
     else if(cfg.contains("nodeTableShardsPowerOfTwo"))   params.nodeTableShardsPowerOfTwo = cfg.getInt("nodeTableShardsPowerOfTwo",        8, 24);
@@ -1124,7 +1152,7 @@ std::unique_ptr<PatternBonusTable> Setup::loadAndPruneAutoPatternBonusTables(Con
       int maxTurnNumber = getAutoPatternIntParam(cfg,"autoAvoidRepeatMaxTurnNumber",boardXSize,boardYSize,0,1000000);
       size_t maxPoses = getAutoPatternInt64Param(cfg,"autoAvoidRepeatMaxPoses",boardXSize,boardYSize,0,(int64_t)1000000000000LL);
 
-      string logSource = dirPath;
+      const string& logSource = dirPath;
       patternBonusTable->avoidRepeatedPosMovesAndDeleteExcessFiles({baseDir + "/" + dirName},penalty,lambda,minTurnNumber,maxTurnNumber,maxPoses,logger,logSource);
     }
 

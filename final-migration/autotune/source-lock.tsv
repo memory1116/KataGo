@@ -1,0 +1,8 @@
+# name	compatibility	builder	distribution	notes
+# Source revisions are captured in each release, but are not hard-coded plan or
+# build keys. Patch and API-shape checks fail closed when an upstream version is
+# no longer compatible.
+cutlass	current-clean-source	header+nvidia-binary	nvidia-cutlass-dsl	CuTe generator source plus C++ headers
+flash-attention	current-clean-source	python:flash_attn/cute	flash-attn-4	apply both checked-in KataGo patches
+flash-cutlass	upstream-submodule	header	-	materialize at flash-attention/csrc/cutlass
+zlib	compatible-clean-source	cmake	zlib	portable tar build only

@@ -3,6 +3,8 @@
 namespace MainCmds {
   int analysis(const std::vector<std::string>& args);
   int benchmark(const std::vector<std::string>& args);
+  int benchmarknn(const std::vector<std::string>& args);
+  int replaynn(const std::vector<std::string>& args);
   int contribute(const std::vector<std::string>& args);
   int evalsgf(const std::vector<std::string>& args);
   int gatekeeper(const std::vector<std::string>& args);
@@ -28,6 +30,7 @@ namespace MainCmds {
   int runsekitrainwritetests(const std::vector<std::string>& args);
   int runnnonmanyposestest(const std::vector<std::string>& args);
   int runnnbatchingtest(const std::vector<std::string>& args);
+  int runnngtpstresstest(const std::vector<std::string>& args);
   int runownershiptests(const std::vector<std::string>& args);
   int runtinynntests(const std::vector<std::string>& args);
   int runnnevalcanarytests(const std::vector<std::string>& args);
@@ -42,16 +45,20 @@ namespace MainCmds {
   int writebook(const std::vector<std::string>& args);
   int checkbook(const std::vector<std::string>& args);
   int booktoposes(const std::vector<std::string>& args);
+  int comparebooks(const std::vector<std::string>& args);
+  int findbookbottlenecks(const std::vector<std::string>& args);
   int writetrainingdata(const std::vector<std::string>& args);
 
   int trystartposes(const std::vector<std::string>& args);
   int viewstartposes(const std::vector<std::string>& args);
   int checksgfhintpolicy(const std::vector<std::string>& args);
+  int genposesfromselfplayinit(const std::vector<std::string>& args);
 
-  int demoplay(const std::vector<std::string>& args);
   int printclockinfo(const std::vector<std::string>& args);
   int sampleinitializations(const std::vector<std::string>& args);
   int evalrandominits(const std::vector<std::string>& args);
+  int searchentropyanalysis(const std::vector<std::string>& args);
+  int selfplaysurprisedump(const std::vector<std::string>& args);
 
   int sandbox();
 }

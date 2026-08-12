@@ -1,5 +1,6 @@
 #include "../search/searchparams.h"
 
+#include "../core/sha2.h"
 #include "../external/nlohmann_json/json.hpp"
 
 using nlohmann::json;
@@ -70,6 +71,7 @@ SearchParams::SearchParams()
    wideRootNoise(0.0),
    enablePassingHacks(false),
    enableMorePassingHacks(false),
+   alwaysComputePassAliveUnderSuicideRules(enabled_t::Auto),
    playoutDoublingAdvantage(0.0),
    playoutDoublingAdvantagePla(C_EMPTY),
    avoidRepeatedPatternUtility(0.0),
@@ -81,6 +83,8 @@ SearchParams::SearchParams()
    subtreeValueBiasTableNumShards(65536),
    subtreeValueBiasFreeProp(0.8),
    subtreeValueBiasWeightExponent(0.5),
+   useEvalCache(false),
+   evalCacheMinVisits(100),
    nodeTableShardsPowerOfTwo(16),
    numVirtualLossesPerThread(3.0),
    numThreads(1),
@@ -196,6 +200,7 @@ bool SearchParams::operator==(const SearchParams& other) const {
     wideRootNoise == other.wideRootNoise &&
     enablePassingHacks == other.enablePassingHacks &&
     enableMorePassingHacks == other.enableMorePassingHacks &&
+    alwaysComputePassAliveUnderSuicideRules == other.alwaysComputePassAliveUnderSuicideRules &&
 
     playoutDoublingAdvantage == other.playoutDoublingAdvantage &&
     playoutDoublingAdvantagePla == other.playoutDoublingAdvantagePla &&
@@ -212,6 +217,9 @@ bool SearchParams::operator==(const SearchParams& other) const {
     subtreeValueBiasTableNumShards == other.subtreeValueBiasTableNumShards &&
     subtreeValueBiasFreeProp == other.subtreeValueBiasFreeProp &&
     subtreeValueBiasWeightExponent == other.subtreeValueBiasWeightExponent &&
+
+    useEvalCache == other.useEvalCache &&
+    evalCacheMinVisits == other.evalCacheMinVisits &&
 
     nodeTableShardsPowerOfTwo == other.nodeTableShardsPowerOfTwo &&
     numVirtualLossesPerThread == other.numVirtualLossesPerThread &&
@@ -361,6 +369,14 @@ void SearchParams::failIfParamsDifferOnUnchangeableParameter(const SearchParams&
   if(dynamic.nodeTableShardsPowerOfTwo != initial.nodeTableShardsPowerOfTwo) {
     throw StringError("Cannot change nodeTableShardsPowerOfTwo after initialization");
   }
+
+  // Analysis engine shares eval cache across multiple analysis threads, so changing/overriding it is awkward.
+  if(dynamic.useEvalCache != initial.useEvalCache) {
+    throw StringError("Cannot change useEvalCache after initialization");
+  }
+  if(dynamic.evalCacheMinVisits != initial.evalCacheMinVisits) {
+    throw StringError("Cannot change evalCacheMinVisits after initialization");
+  }
 }
 
 json SearchParams::changeableParametersToJson() const {
@@ -440,6 +456,7 @@ json SearchParams::changeableParametersToJson() const {
   ret["wideRootNoise"] = wideRootNoise;
   ret["enablePassingHacks"] = enablePassingHacks;
   ret["enableMorePassingHacks"] = enableMorePassingHacks;
+  ret["alwaysComputePassAliveUnderSuicideRules"] = alwaysComputePassAliveUnderSuicideRules.toString();
 
   // Special handling in GTP
   ret["playoutDoublingAdvantage"] = playoutDoublingAdvantage;
@@ -459,6 +476,9 @@ json SearchParams::changeableParametersToJson() const {
   ret["subtreeValueBiasTableNumShards"] = subtreeValueBiasTableNumShards;
   ret["subtreeValueBiasFreeProp"] = subtreeValueBiasFreeProp;
   ret["subtreeValueBiasWeightExponent"] = subtreeValueBiasWeightExponent;
+
+  // ret["useEvalCache"] = useEvalCache;
+  // ret["evalCacheMinVisits"] = evalCacheMinVisits;
 
   // ret["nodeTableShardsPowerOfTwo"] = nodeTableShardsPowerOfTwo;
   ret["numVirtualLossesPerThread"] = numVirtualLossesPerThread;
@@ -504,6 +524,37 @@ json SearchParams::changeableParametersToJson() const {
   ret["humanSLChosenMovePiklLambda"] = humanSLChosenMovePiklLambda;
 
   return ret;
+}
+
+Hash128 SearchParams::getHash() const {
+  // Build on changeableParametersToJson, but fold in the parameters it deliberately omits so that this
+  // hash reflects *all* parameters (any of which can affect cached search results). If a new parameter is
+  // added to operator== it should also be reflected here - either it will already flow through
+  // changeableParametersToJson, or it must be added to the supplement below.
+  json ret = changeableParametersToJson();
+
+  // Parameters omitted from changeableParametersToJson
+  ret["avoidMYTDaggerHackPla"] = (int)avoidMYTDaggerHackPla;
+  ret["avoidRepeatedPatternUtility"] = avoidRepeatedPatternUtility;
+  ret["antiMirror"] = antiMirror;
+  ret["useEvalCache"] = useEvalCache;
+  ret["evalCacheMinVisits"] = evalCacheMinVisits;
+  ret["nodeTableShardsPowerOfTwo"] = nodeTableShardsPowerOfTwo;
+
+  // humanSLProfile's own getHash asserts on an uninitialized profile,
+  // so only call it when initialized (the common no-human-model case leaves it uninitialized).
+  ret["humanSLProfileInitialized"] = humanSLProfile.initialized;
+  if(humanSLProfile.initialized) {
+    //Use a fixed player. We only need a stable value that distinguishes distinct profiles.
+    Hash128 profileHash = humanSLProfile.getHash(P_BLACK);
+    ret["humanSLProfileHash0"] = profileHash.hash0;
+    ret["humanSLProfileHash1"] = profileHash.hash1;
+  }
+
+  const std::string dumped = ret.dump();
+  uint64_t hash[4];
+  SHA2::get256(dumped.c_str(), hash);
+  return Hash128(hash[0], hash[1]);
 }
 
 #define PRINTPARAM(PARAMNAME) out << #PARAMNAME << ": " << PARAMNAME << std::endl;
@@ -589,6 +640,7 @@ void SearchParams::printParams(std::ostream& out) const {
   PRINTPARAM(wideRootNoise);
   PRINTPARAM(enablePassingHacks);
   PRINTPARAM(enableMorePassingHacks);
+  out << "alwaysComputePassAliveUnderSuicideRules: " << alwaysComputePassAliveUnderSuicideRules.toString() << std::endl;
 
   PRINTPARAM(playoutDoublingAdvantage);
   std::cout << "playoutDoublingAdvantagePla" << ": " << (int)playoutDoublingAdvantagePla << std::endl;
@@ -606,6 +658,8 @@ void SearchParams::printParams(std::ostream& out) const {
   PRINTPARAM(subtreeValueBiasFreeProp);
   PRINTPARAM(subtreeValueBiasWeightExponent);
 
+  PRINTPARAM(useEvalCache);
+  PRINTPARAM(evalCacheMinVisits);
 
   PRINTPARAM(nodeTableShardsPowerOfTwo);
   PRINTPARAM(numVirtualLossesPerThread);

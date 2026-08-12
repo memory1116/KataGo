@@ -2,6 +2,7 @@
 #define SEARCH_SEARCHPARAMS_H_
 
 #include "../core/global.h"
+#include "../core/commontypes.h"
 #include "../game/board.h"
 #include "../neuralnet/sgfmetadata.h"
 
@@ -91,6 +92,10 @@ struct SearchParams {
   double wideRootNoise; //Explore at the root more widely
   bool enablePassingHacks; //Enable some hacks that mitigate rare instances when passing messes up deeper searches.
   bool enableMorePassingHacks; //Always weightless search passing and non passing moves when a pass would end the phase after a few visits.
+  //Whether to compute pass-alive areas as if multi-stone suicide were always legal regardless of the actual suicide
+  //rule, for game end/scoring within the search tree and for nn input featurization.
+  //Auto = do so if and only if the neural net declares that it expects this. See BoardHistory::alwaysComputePassAliveUnderSuicideRules.
+  enabled_t alwaysComputePassAliveUnderSuicideRules;
 
   double playoutDoublingAdvantage; //Play as if we have this many doublings of playouts vs the opponent
   Player playoutDoublingAdvantagePla; //Negate playoutDoublingAdvantage when making a move for the opponent of this player. If empty, opponent of the root player.
@@ -111,6 +116,9 @@ struct SearchParams {
   int32_t subtreeValueBiasTableNumShards; //Number of shards for subtreeValueBiasFactor for initial hash lookup and mutexing
   double subtreeValueBiasFreeProp; //When a node is no longer part of the relevant search tree, only decay this proportion of the weight.
   double subtreeValueBiasWeightExponent; //When computing empiricial bias, weight subtree results by childvisits to this power.
+
+  bool useEvalCache;
+  int64_t evalCacheMinVisits;
 
   //Threading-related
   int nodeTableShardsPowerOfTwo; //Controls number of shards of node table for graph search transposition lookup
@@ -172,6 +180,9 @@ struct SearchParams {
 
   bool operator==(const SearchParams& other) const;
   bool operator!=(const SearchParams& other) const;
+
+  // Hash of all parameters, such that params that compare unequal hash differently (with high probability).
+  Hash128 getHash() const;
 
   nlohmann::json changeableParametersToJson() const;
   void printParams(std::ostream& out) const;

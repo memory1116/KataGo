@@ -18,23 +18,19 @@ ComputeContext* NeuralNet::createComputeContext(
   Logger* logger,
   int nnXLen,
   int nnYLen,
-  const string& openCLTunerFile,
   const string& homeDataDirOverride,
-  bool openCLReTunePerBoardSize,
   enabled_t useFP16Mode,
-  enabled_t useNHWCMode,
-  const LoadedModel* loadedModel
+  const LoadedModel* loadedModel,
+  ConfigParser& cfg
 ) {
   (void)gpuIdxs;
   (void)logger;
   (void)nnXLen;
   (void)nnYLen;
-  (void)openCLTunerFile;
   (void)homeDataDirOverride;
-  (void)openCLReTunePerBoardSize;
   (void)useFP16Mode;
-  (void)useNHWCMode;
   (void)loadedModel;
+  (void)cfg;
   throw StringError("Dummy neural net backend: NeuralNet::createComputeContext unimplemented");
 }
 void NeuralNet::freeComputeContext(ComputeContext* computeContext) {
@@ -58,6 +54,15 @@ const ModelDesc& NeuralNet::getModelDesc(const LoadedModel* loadedModel) {
   throw StringError("Dummy neural net backend: NeuralNet::getModelDesc unimplemented");
 }
 
+void* NeuralNet::createComputeStream(int gpuIdxForThisThread) {
+  (void)gpuIdxForThisThread;
+  return NULL;
+}
+
+void NeuralNet::freeComputeStream(void* computeStream) {
+  (void)computeStream;
+}
+
 ComputeHandle* NeuralNet::createComputeHandle(
   ComputeContext* context,
   const LoadedModel* loadedModel,
@@ -66,7 +71,8 @@ ComputeHandle* NeuralNet::createComputeHandle(
   bool requireExactNNLen,
   bool inputsUseNHWC,
   int gpuIdxForThisThread,
-  int serverThreadIdx
+  int serverThreadIdx,
+  void* computeStream
 ) {
   (void)context;
   (void)loadedModel;
@@ -76,6 +82,7 @@ ComputeHandle* NeuralNet::createComputeHandle(
   (void)inputsUseNHWC;
   (void)gpuIdxForThisThread;
   (void)serverThreadIdx;
+  (void)computeStream;
   throw StringError("Dummy neural net backend: NeuralNet::createLocalGpuHandle unimplemented");
 }
 
@@ -86,6 +93,12 @@ void NeuralNet::freeComputeHandle(ComputeHandle* gpuHandle) {
 
 bool NeuralNet::isUsingFP16(const ComputeHandle* handle) {
   (void)handle;
+  return false;
+}
+
+bool NeuralNet::setIsWarmup(const ComputeHandle* handle, bool isWarmup) {
+  (void)handle;
+  (void)isWarmup;
   return false;
 }
 

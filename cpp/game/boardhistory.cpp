@@ -1,6 +1,7 @@
 #include "../game/boardhistory.h"
 
 #include <algorithm>
+#include "../core/test.h"
 
 using namespace std;
 
@@ -37,6 +38,7 @@ BoardHistory::BoardHistory()
    assumeMultipleStartingBlackMovesAreHandicap(false),
    whiteHasMoved(false),
    overrideNumHandicapStones(-1),
+   alwaysComputePassAliveUnderSuicideRules(false),
    recentBoards(),
    currentRecentBoardIdx(0),
    presumedNextMovePla(P_BLACK),
@@ -64,7 +66,7 @@ BoardHistory::BoardHistory()
 BoardHistory::~BoardHistory()
 {}
 
-BoardHistory::BoardHistory(const Board& board, Player pla, const Rules& r, int ePhase)
+BoardHistory::BoardHistory(const Board& board, Player pla, const Rules& r, int ePhase, bool alwaysPassAliveSuicide)
   :rules(r),
    moveHistory(),
    preventEncoreHistory(),
@@ -77,6 +79,7 @@ BoardHistory::BoardHistory(const Board& board, Player pla, const Rules& r, int e
    assumeMultipleStartingBlackMovesAreHandicap(false),
    whiteHasMoved(false),
    overrideNumHandicapStones(-1),
+   alwaysComputePassAliveUnderSuicideRules(alwaysPassAliveSuicide),
    recentBoards(),
    currentRecentBoardIdx(0),
    presumedNextMovePla(pla),
@@ -116,6 +119,7 @@ BoardHistory::BoardHistory(const BoardHistory& other)
    assumeMultipleStartingBlackMovesAreHandicap(other.assumeMultipleStartingBlackMovesAreHandicap),
    whiteHasMoved(other.whiteHasMoved),
    overrideNumHandicapStones(other.overrideNumHandicapStones),
+   alwaysComputePassAliveUnderSuicideRules(other.alwaysComputePassAliveUnderSuicideRules),
    recentBoards(),
    currentRecentBoardIdx(other.currentRecentBoardIdx),
    presumedNextMovePla(other.presumedNextMovePla),
@@ -158,6 +162,7 @@ BoardHistory& BoardHistory::operator=(const BoardHistory& other)
   assumeMultipleStartingBlackMovesAreHandicap = other.assumeMultipleStartingBlackMovesAreHandicap;
   whiteHasMoved = other.whiteHasMoved;
   overrideNumHandicapStones = other.overrideNumHandicapStones;
+  alwaysComputePassAliveUnderSuicideRules = other.alwaysComputePassAliveUnderSuicideRules;
   std::copy(other.recentBoards, other.recentBoards+NUM_RECENT_BOARDS, recentBoards);
   currentRecentBoardIdx = other.currentRecentBoardIdx;
   presumedNextMovePla = other.presumedNextMovePla;
@@ -201,6 +206,7 @@ BoardHistory::BoardHistory(BoardHistory&& other) noexcept
   assumeMultipleStartingBlackMovesAreHandicap(other.assumeMultipleStartingBlackMovesAreHandicap),
   whiteHasMoved(other.whiteHasMoved),
   overrideNumHandicapStones(other.overrideNumHandicapStones),
+  alwaysComputePassAliveUnderSuicideRules(other.alwaysComputePassAliveUnderSuicideRules),
   recentBoards(),
   currentRecentBoardIdx(other.currentRecentBoardIdx),
   presumedNextMovePla(other.presumedNextMovePla),
@@ -240,6 +246,7 @@ BoardHistory& BoardHistory::operator=(BoardHistory&& other) noexcept
   assumeMultipleStartingBlackMovesAreHandicap = other.assumeMultipleStartingBlackMovesAreHandicap;
   whiteHasMoved = other.whiteHasMoved;
   overrideNumHandicapStones = other.overrideNumHandicapStones;
+  alwaysComputePassAliveUnderSuicideRules = other.alwaysComputePassAliveUnderSuicideRules;
   std::copy(other.recentBoards, other.recentBoards+NUM_RECENT_BOARDS, recentBoards);
   currentRecentBoardIdx = other.currentRecentBoardIdx;
   presumedNextMovePla = other.presumedNextMovePla;
@@ -284,6 +291,7 @@ void BoardHistory::clear(const Board& board, Player pla, const Rules& r, int ePh
   assumeMultipleStartingBlackMovesAreHandicap = false;
   whiteHasMoved = false;
   overrideNumHandicapStones = -1;
+  //Deliberately does NOT reset alwaysComputePassAliveUnderSuicideRules - see boardhistory.h.
 
   //This makes it so that if we ask for recent boards with a lookback beyond what we have a history for,
   //we simply return copies of the starting board.
@@ -323,9 +331,9 @@ void BoardHistory::clear(const Board& board, Player pla, const Rules& r, int ePh
 
   //Handle encore phase
   encorePhase = ePhase;
-  assert(encorePhase >= 0 && encorePhase <= 2);
+  testAssert(encorePhase >= 0 && encorePhase <= 2);
   if(encorePhase > 0)
-    assert(rules.scoringRule == Rules::SCORING_TERRITORY);
+    testAssert(rules.scoringRule == Rules::SCORING_TERRITORY);
   //Update the few parameters that depend on encore
   if(encorePhase == 2)
     std::copy(board.colors, board.colors+Board::MAX_ARR_SIZE, secondEncoreStartColors);
@@ -355,7 +363,7 @@ void BoardHistory::clear(const Board& board, Player pla, const Rules& r, int ePh
 }
 
 BoardHistory BoardHistory::copyToInitial() const {
-  BoardHistory hist(initialBoard, initialPla, rules, initialEncorePhase);
+  BoardHistory hist(initialBoard, initialPla, rules, initialEncorePhase, alwaysComputePassAliveUnderSuicideRules);
   hist.setInitialTurnNumber(initialTurnNumber);
   hist.setAssumeMultipleStartingBlackMovesAreHandicap(assumeMultipleStartingBlackMovesAreHandicap);
   hist.setOverrideNumHandicapStones(overrideNumHandicapStones);
@@ -374,6 +382,14 @@ void BoardHistory::setAssumeMultipleStartingBlackMovesAreHandicap(bool b) {
 void BoardHistory::setOverrideNumHandicapStones(int n) {
   overrideNumHandicapStones = n;
   whiteHandicapBonusScore = (float)computeWhiteHandicapBonus();
+}
+
+void BoardHistory::setAlwaysComputePassAliveUnderSuicideRules(bool b) {
+  alwaysComputePassAliveUnderSuicideRules = b;
+}
+
+bool BoardHistory::suicideLegalForPassAlive() const {
+  return rules.multiStoneSuicideLegal || alwaysComputePassAliveUnderSuicideRules;
 }
 
 static int numHandicapStonesOnBoardHelper(const Board& board, int blackNonPassTurnsToStart) {
@@ -568,8 +584,7 @@ float BoardHistory::currentSelfKomi(Player pla, double drawEquivalentWinsForWhit
   else if(pla == P_BLACK)
     return -whiteKomiAdjusted;
   else {
-    assert(false);
-    return 0.0f;
+    ASSERT_UNREACHABLE;
   }
 }
 
@@ -581,7 +596,7 @@ int BoardHistory::countAreaScoreWhiteMinusBlack(const Board& board, Color area[B
     bool unsafeBigTerritories = true;
     board.calculateArea(
       area,
-      nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,rules.multiStoneSuicideLegal
+      nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,suicideLegalForPassAlive()
     );
   }
   else if(rules.taxRule == Rules::TAX_SEKI || rules.taxRule == Rules::TAX_ALL) {
@@ -592,7 +607,7 @@ int BoardHistory::countAreaScoreWhiteMinusBlack(const Board& board, Color area[B
       area,whiteMinusBlackIndependentLifeRegionCount,
       keepTerritories,
       keepStones,
-      rules.multiStoneSuicideLegal
+      suicideLegalForPassAlive()
     );
     if(rules.taxRule == Rules::TAX_ALL)
       score -= 2 * whiteMinusBlackIndependentLifeRegionCount;
@@ -634,7 +649,7 @@ int BoardHistory::countTerritoryAreaScoreWhiteMinusBlack(const Board& board, Col
     area,whiteMinusBlackIndependentLifeRegionCount,
     keepTerritories,
     keepStones,
-    rules.multiStoneSuicideLegal
+    suicideLegalForPassAlive()
   );
 
   for(int y = 0; y<board.y_size; y++) {
@@ -718,7 +733,7 @@ void BoardHistory::endGameIfAllPassAlive(const Board& board) {
   Color area[Board::MAX_ARR_SIZE];
   board.calculateArea(
     area,
-    nonPassAliveStones, safeBigTerritories, unsafeBigTerritories, rules.multiStoneSuicideLegal
+    nonPassAliveStones, safeBigTerritories, unsafeBigTerritories, suicideLegalForPassAlive()
   );
 
   for(int y = 0; y<board.y_size; y++) {
@@ -914,10 +929,6 @@ bool BoardHistory::makeBoardMoveTolerant(Board& board, Loc moveLoc, Player moveP
   return true;
 }
 
-void BoardHistory::makeBoardMoveAssumeLegal(Board& board, Loc moveLoc, Player movePla, const KoHashTable* rootKoHashTable) {
-  makeBoardMoveAssumeLegal(board,moveLoc,movePla,rootKoHashTable,false);
-}
-
 void BoardHistory::makeBoardMoveAssumeLegal(Board& board, Loc moveLoc, Player movePla, const KoHashTable* rootKoHashTable, bool preventEncore) {
   Hash128 posHashBeforeMove = board.pos_hash;
 
@@ -1012,7 +1023,7 @@ void BoardHistory::makeBoardMoveAssumeLegal(Board& board, Loc moveLoc, Player mo
       //Update ko recapture blocks and record that this was a ko capture
       if(board.ko_loc != Board::NULL_LOC) {
         setKoRecapBlocked(moveLoc,true);
-        koCapturesInEncore.push_back(EncoreKoCapture(posHashBeforeMove,moveLoc,movePla));
+        koCapturesInEncore.emplace_back(posHashBeforeMove,moveLoc,movePla);
         //Clear simple ko loc now that we've absorbed the ko loc information into the korecap blocks
         //Once we have that, the simple ko loc plays no further role in game state or legality
         board.clearSimpleKoLoc();
@@ -1034,7 +1045,7 @@ void BoardHistory::makeBoardMoveAssumeLegal(Board& board, Loc moveLoc, Player mo
 
   Hash128 koHashAfterThisMove = getKoHash(rules,board,getOpp(movePla),encorePhase,koRecapBlockHash);
   koHashHistory.push_back(koHashAfterThisMove);
-  moveHistory.push_back(Move(moveLoc,movePla));
+  moveHistory.emplace_back(moveLoc,movePla);
   preventEncoreHistory.push_back(preventEncore);
   numTurnsThisPhase += 1;
   numApproxValidTurnsThisPhase += 1;
@@ -1055,11 +1066,13 @@ void BoardHistory::makeBoardMoveAssumeLegal(Board& board, Loc moveLoc, Player mo
       for(int x = 0; x<board.x_size; x++) {
         Loc loc = Location::getLoc(x,y,board.x_size);
         //Cannot be superko banned if it's not a pseudolegal move in the first place, or we would already ban the move under simple ko.
-        if(board.colors[loc] != C_EMPTY || board.isIllegalSuicide(loc,nextPla,rules.multiStoneSuicideLegal) || loc == board.ko_loc)
+        if(board.colors[loc] != C_EMPTY)
           superKoBanned[loc] = false;
         //Also cannot be superko banned if a stone was never there or played there before AND the move is not suicide, because that means
         //the move results in a new stone there and if no stone was ever there in the past the it must be a new position.
         else if(!wasEverOccupiedOrPlayed[loc] && !board.isSuicide(loc,nextPla))
+          superKoBanned[loc] = false;
+        else if(board.isIllegalSuicide(loc,nextPla,rules.multiStoneSuicideLegal) || loc == board.ko_loc)
           superKoBanned[loc] = false;
         else {
           Hash128 posHashAfterMove = board.getPosHashAfterMove(loc,nextPla);
@@ -1202,6 +1215,13 @@ Hash128 BoardHistory::getSituationAndSimpleKoAndPrevPosHash(const Board& board, 
 }
 
 Hash128 BoardHistory::getSituationRulesAndKoHash(const Board& board, const BoardHistory& hist, Player nextPlayer, double drawEquivalentWinsForWhite) {
+  return getSituationRulesAndKoHash(board, hist, nextPlayer, drawEquivalentWinsForWhite, hist.alwaysComputePassAliveUnderSuicideRules);
+}
+
+Hash128 BoardHistory::getSituationRulesAndKoHash(
+  const Board& board, const BoardHistory& hist, Player nextPlayer, double drawEquivalentWinsForWhite,
+  bool alwaysComputePassAliveUnderSuicideRules
+) {
   int xSize = board.x_size;
   int ySize = board.y_size;
 
@@ -1209,7 +1229,7 @@ Hash128 BoardHistory::getSituationRulesAndKoHash(const Board& board, const Board
   Hash128 hash = board.pos_hash;
   hash ^= Board::ZOBRIST_PLAYER_HASH[nextPlayer];
 
-  assert(hist.encorePhase >= 0 && hist.encorePhase <= 2);
+  testAssert(hist.encorePhase >= 0 && hist.encorePhase <= 2);
   hash ^= Board::ZOBRIST_ENCORE_HASH[hist.encorePhase];
 
   if(hist.encorePhase == 0) {
@@ -1263,6 +1283,12 @@ Hash128 BoardHistory::getSituationRulesAndKoHash(const Board& board, const Board
     hash ^= Rules::ZOBRIST_BUTTON_HASH;
   if(hist.rules.friendlyPassOk)
     hash ^= Rules::ZOBRIST_FRIENDLY_PASS_OK_HASH;
+
+  //Fold in whether pass-alive computations are being performed as if suicide were legal, when that
+  //differs from what the suicide rule alone would give. When the rules already have suicide legal
+  //the flag is a no-op, and we deliberately don't fold it then, so that caches can be shared.
+  if(alwaysComputePassAliveUnderSuicideRules && !hist.rules.multiStoneSuicideLegal)
+    hash ^= Rules::ZOBRIST_PASS_ALIVE_UNDER_SUICIDE_HASH;
 
   return hash;
 }

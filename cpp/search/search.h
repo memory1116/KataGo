@@ -15,6 +15,7 @@
 #include "../game/rules.h"
 #include "../neuralnet/nneval.h"
 #include "../search/analysisdata.h"
+#include "../search/evalcache.h"
 #include "../search/mutexpool.h"
 #include "../search/reportedsearchvalues.h"
 #include "../search/searchparams.h"
@@ -85,6 +86,10 @@ struct Search {
   Board rootBoard;
   BoardHistory rootHistory;
   Hash128 rootGraphHash;
+  //Hash of the search params, folded into the eval cache key so that cached search results are not shared
+  //across different params (the eval cache persists across param changes and, in the analysis engine, is
+  //shared across threads that may be running with different params). Recomputed at the start of each search.
+  Hash128 evalCacheParamsHash;
   Loc rootHintLoc;
 
   //External user-specified moves that are illegal or that should be nontrivially searched, and the number of turns for which they should
@@ -137,6 +142,8 @@ struct Search {
   PatternBonusTable* patternBonusTable;
   std::unique_ptr<PatternBonusTable> externalPatternBonusTable;
 
+  std::shared_ptr<EvalCacheTable> evalCache;
+
   Rand nonSearchRand; //only for use not in search, since rand isn't threadsafe
 
   //================================================================================================================
@@ -179,13 +186,13 @@ struct Search {
   //Note - randSeed controls a few things in the search, but a lot of the randomness actually comes from
   //random symmetries of the neural net evaluations, see nneval.h
   Search(
-    SearchParams params,
+    const SearchParams& params,
     NNEvaluator* nnEval,
     Logger* logger,
     const std::string& randSeed
   );
   Search(
-    SearchParams params,
+    const SearchParams& params,
     NNEvaluator* nnEval,
     NNEvaluator* humanEval,
     Logger* logger,
@@ -212,7 +219,7 @@ struct Search {
   Player getPlayoutDoublingAdvantagePla() const;
 
   //Get the NNPos corresponding to a loc, convenience method
-  int getPos(Loc moveLoc) const;
+  inline int getPos(Loc moveLoc) const { return NNPos::locToPos(moveLoc,rootBoard.x_size,nnXLen,nnYLen); }
 
   //Clear all results of search and sets a new position or something else
   void setPosition(Player pla, const Board& board, const BoardHistory& history);
@@ -225,10 +232,14 @@ struct Search {
   void setAvoidMoveUntilRescaleRoot(bool b);
   void setAlwaysIncludeOwnerMap(bool b);
   void setRootSymmetryPruningOnly(const std::vector<int>& rootPruneOnlySymmetries);
-  void setParams(SearchParams params);
-  void setParamsNoClearing(SearchParams params); //Does not clear search
+  void setParams(const SearchParams& params);
+  void setParamsNoClearing(const SearchParams& params); //Does not clear search
+  //Resolve a false/auto/true alwaysComputePassAliveUnderSuicideRules setting against what a neural net
+  //declares that it expects. Auto resolves to the net's declaration (false if nnEval is NULL).
+  static bool resolveAlwaysComputePassAliveUnderSuicideRules(const SearchParams& params, const NNEvaluator* nnEval);
   void setExternalPatternBonusTable(std::unique_ptr<PatternBonusTable>&& table);
   void setCopyOfExternalPatternBonusTable(const std::unique_ptr<PatternBonusTable>& table);
+  void setExternalEvalCache(const std::shared_ptr<EvalCacheTable>& cache);
   void setNNEval(NNEvaluator* nnEval);
 
   //If the number of threads is reduced, this can free up some excess threads in the thread pool.
@@ -252,16 +263,16 @@ struct Search {
   //Run an entire search from start to finish
   Loc runWholeSearchAndGetMove(Player movePla);
   void runWholeSearch(Player movePla);
-  void runWholeSearch(std::atomic<bool>& shouldStopNow);
+  void runWholeSearch(Player movePla, std::function<bool()>* shouldStopEarly);
 
   //Pondering indicates that we are searching "for" the last player that we did a non-ponder search for, and should use ponder search limits.
   Loc runWholeSearchAndGetMove(Player movePla, bool pondering);
   void runWholeSearch(Player movePla, bool pondering);
-  void runWholeSearch(std::atomic<bool>& shouldStopNow, bool pondering);
+  void runWholeSearch(Player movePla, bool pondering, std::function<bool()>* shouldStopEarly);
 
   void runWholeSearch(
-    std::atomic<bool>& shouldStopNow,
-    std::function<void()>* searchBegun, //If not null, will be called once search has begun and tree inspection is safe
+    const std::function<void()>* searchBegun, //If not null, will be called once search has begun and tree inspection is safe
+    std::function<bool()>* shouldStopEarly, //If not null and returns true, search will stop soon after
     bool pondering,
     const TimeControls& tc,
     double searchFactor
@@ -339,7 +350,7 @@ struct Search {
 
   void printPV(std::ostream& out, const SearchNode* node, int maxDepth) const;
   void printPVForMove(std::ostream& out, const SearchNode* node, Loc move, int maxDepth) const;
-  void printTree(std::ostream& out, const SearchNode* node, PrintTreeOptions options, Player perspective) const;
+  void printTree(std::ostream& out, const SearchNode* node, const PrintTreeOptions& options, Player perspective) const;
   void printRootPolicyMap(std::ostream& out) const;
   void printRootOwnershipMap(std::ostream& out, Player perspective) const;
   void printRootEndingScoreValueBonus(std::ostream& out) const;
@@ -403,6 +414,7 @@ struct Search {
     const Player perspective,
     int analysisPVLen, bool preventEncore, bool includePolicy,
     bool includeOwnership, bool includeOwnershipStdev, bool includeMovesOwnership, bool includeMovesOwnershipStdev, bool includePVVisits,
+    bool includeNoResultValue,
     nlohmann::json& ret
   ) const;
 
@@ -427,7 +439,7 @@ public:
   static void computeDirichletAlphaDistribution(int policySize, const float* policyProbs, double* alphaDistr);
   static void addDirichletNoise(const SearchParams& searchParams, Rand& rand, int policySize, float* policyProbs);
 private:
-  std::shared_ptr<NNOutput>* maybeAddPolicyNoiseAndTemp(SearchThread& thread, bool isRoot, NNOutput* oldNNOutput) const;
+  std::shared_ptr<NNOutput>* maybeAddPolicyNoiseAndTemp(SearchThread& thread, bool isRoot, const NNOutput* oldNNOutput) const;
 
   //----------------------------------------------------------------------------------------
   // Computing basic utility and scores
@@ -616,6 +628,17 @@ private:
   void updateStatsAfterPlayout(SearchNode& node, SearchThread& thread, bool isRoot);
   void recomputeNodeStats(SearchNode& node, SearchThread& thread, int32_t numVisitsToAdd, bool isRoot);
 
+  void adjustEvalsFromCacheHelper(
+    const std::shared_ptr<EvalCacheEntry>& evalCacheEntry,
+    int64_t thisNodeVisits,
+    double& winLossValueAvg,
+    double& noResultValueAvg,
+    double& scoreMeanAvg,
+    double& scoreMeanSqAvg,
+    double& leadAvg,
+    double* utilityAvg
+  );
+
   void downweightBadChildrenAndNormalizeWeight(
     int numChildren,
     double currentTotalWeight,
@@ -632,6 +655,10 @@ private:
   // search.cpp
   //----------------------------------------------------------------------------------------
   uint32_t createMutexIdxForNode(SearchThread& thread) const;
+
+  // Key to look up or store a node in the eval cache so that distinct params never share cached search results.
+  Hash128 getEvalCacheKey(Hash128 graphHash) const { return graphHash ^ evalCacheParamsHash; }
+
   SearchNode* allocateOrFindNode(SearchThread& thread, Player nextPla, Loc bestChildMoveLoc, bool forceNonTerminal, Hash128 graphHash);
   void clearOldNNOutputs();
   void transferOldNNOutputs(SearchThread& thread);
@@ -643,8 +670,17 @@ private:
   // Initialization and core search logic
   // search.cpp
   //----------------------------------------------------------------------------------------
+  //Enforce the invariant that rootHistory's alwaysComputePassAliveUnderSuicideRules always matches
+  //what searchParams and nnEvaluator resolve to, regardless of any history set into this Search.
+  //Clears search if this changes the flag, since all graph hashes and in-tree adjudication change.
+  //Called by every setter that installs or rebuilds rootHistory or changes params or nnEvaluator.
+  void applyPassAliveModeToRootHistory();
+  //Copy of nnInputParams for querying humanEvaluator, overriding the pass-alive featurization mode
+  //with the human net's own resolution, which may differ from the mode the search is using.
+  MiscNNInputParams paramsForHumanEvaluator(const MiscNNInputParams& nnInputParams) const;
   void computeRootValues(); // Helper for begin search
   void recursivelyRecomputeStats(SearchNode& node); // Helper for search initialization
+  void recursivelyRecordEvalCache(SearchNode& n);
 
   bool playoutDescend(
     SearchThread& thread, SearchNode& node,
@@ -654,7 +690,7 @@ private:
   bool maybeCatchUpEdgeVisits(
     SearchThread& thread,
     SearchNode& node,
-    SearchNode* child,
+    const SearchNode* child,
     const SearchNodeState& nodeState,
     const int bestChildIdx
   );
@@ -723,6 +759,7 @@ private:
     Func& averaging
   ) const;
 
+  void debugPrintChildrenSummary(std::ostream& out, const SearchNode& node, NNOutput* nnOutput);
 
 };
 

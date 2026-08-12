@@ -9,6 +9,7 @@
 #include "../program/playutils.h"
 #include "../program/play.h"
 #include "../command/commandline.h"
+#include "../core/test.h"
 #include "../main.h"
 
 #include "../external/nlohmann_json/json.hpp"
@@ -35,6 +36,7 @@ struct AnalyzeRequest {
   bool includeMovesOwnershipStdev;
   bool includePolicy;
   bool includePVVisits;
+  bool includeNoResultValue;
 
   bool reportDuringSearch;
   double reportDuringSearchEvery;
@@ -141,7 +143,7 @@ int MainCmds::analysis(const vector<string>& args) {
   std::unique_ptr<PatternBonusTable> patternBonusTable = nullptr;
   {
     std::vector<std::unique_ptr<PatternBonusTable>> tables = Setup::loadAvoidSgfPatternBonusTables(cfg,logger);
-    assert(tables.size() == 1);
+    testAssert(tables.size() == 1);
     patternBonusTable = std::move(tables[0]);
   }
 
@@ -238,6 +240,7 @@ int MainCmds::analysis(const vector<string>& args) {
     "includeOwnershipStdev",
     "includePolicy",
     "includePVVisits",
+    "includeNoResultValue",
     "reportDuringSearchEvery",
     "firstReportDuringSearchAfter",
     "priority",
@@ -323,6 +326,7 @@ int MainCmds::analysis(const vector<string>& args) {
       request->includeOwnership,request->includeOwnershipStdev,
       request->includeMovesOwnership,request->includeMovesOwnershipStdev,
       request->includePVVisits,
+      request->includeNoResultValue,
       ret
     );
 
@@ -330,6 +334,12 @@ int MainCmds::analysis(const vector<string>& args) {
       pushToWrite(new string(ret.dump()));
     return success;
   };
+
+  // Common eval cache for all analysis threads
+  std::shared_ptr<EvalCacheTable> evalCache = nullptr;
+  if(defaultParams.useEvalCache) {
+    evalCache = std::make_shared<EvalCacheTable>(defaultParams.subtreeValueBiasTableNumShards);
+  }
 
   auto analysisLoop = [
     &logger,&toAnalyzeQueue,&reportAnalysis,&reportNoAnalysis,&logSearchInfo,&nnEval,&openRequestsMutex,&openRequests
@@ -343,7 +353,7 @@ int MainCmds::analysis(const vector<string>& args) {
       int expected = AnalyzeRequest::STATUS_IN_QUEUE;
       //If it's already terminated, then there's nothing for us to do
       if(!request->status.compare_exchange_strong(expected, AnalyzeRequest::STATUS_POPPED, std::memory_order_acq_rel)) {
-        assert(expected == AnalyzeRequest::STATUS_TERMINATED);
+        testAssert(expected == AnalyzeRequest::STATUS_TERMINATED);
       }
       //Else, the request is live and we marked it as popped
       else {
@@ -361,7 +371,7 @@ int MainCmds::analysis(const vector<string>& args) {
           int expected2 = AnalyzeRequest::STATUS_POPPED;
           //If it was terminated, then stop our search
           if(!request->status.compare_exchange_strong(expected2, threadIdx, std::memory_order_acq_rel)) {
-            assert(expected2 == AnalyzeRequest::STATUS_TERMINATED);
+            testAssert(expected2 == AnalyzeRequest::STATUS_TERMINATED);
             bot->stopWithoutWait();
           }
         };
@@ -426,7 +436,8 @@ int MainCmds::analysis(const vector<string>& args) {
     string searchRandSeed = Global::uint64ToHexString(seedRand.nextUInt64()) + Global::uint64ToHexString(seedRand.nextUInt64());
     AsyncBot* bot = new AsyncBot(defaultParams, nnEval, humanEval, &logger, searchRandSeed);
     bot->setCopyOfExternalPatternBonusTable(patternBonusTable);
-    threads.push_back(std::thread(analysisLoopProtected,bot,threadIdx));
+    bot->setExternalEvalCache(evalCache);
+    threads.emplace_back(analysisLoopProtected,bot,threadIdx);
     bots.push_back(bot);
   }
 
@@ -451,7 +462,7 @@ int MainCmds::analysis(const vector<string>& args) {
     {}
     //A thread started searching it and put its thread idx in
     else {
-      assert(prevStatus >= 0);
+      testAssert(prevStatus >= 0);
       //We've already set the above status to terminated so when the thread terminates due to our killing it below, it will see this.
       //Or else the thread has already done so, in which case it's already properly written a result, also fine.
       int threadIdx = prevStatus;
@@ -529,6 +540,8 @@ int MainCmds::analysis(const vector<string>& args) {
           nnEval->clearCache();
           if(humanEval != NULL)
             humanEval->clearCache();
+          if(evalCache != nullptr)
+            evalCache->clear();
           pushToWrite(new string(input.dump()));
         }
         else if(action == "terminate") {
@@ -610,6 +623,7 @@ int MainCmds::analysis(const vector<string>& args) {
       rbase.includeMovesOwnershipStdev = false;
       rbase.includePolicy = false;
       rbase.includePVVisits = false;
+      rbase.includeNoResultValue = false;
       rbase.reportDuringSearch = false;
       rbase.reportDuringSearchEvery = 1e30;
       rbase.firstReportDuringSearchAfter = 1e30;
@@ -779,7 +793,7 @@ int MainCmds::analysis(const vector<string>& args) {
             reportErrorForId(rbase.id, field, "Could not parse board location: " + s1);
             return false;
           }
-          buf.push_back(Move(loc,pla));
+          buf.emplace_back(loc,pla);
         }
         return true;
       };
@@ -898,15 +912,15 @@ int MainCmds::analysis(const vector<string>& args) {
 
       if(input.find("komi") != input.end()) {
         double komi;
-        static_assert(Rules::MIN_USER_KOMI == -150.0f, "");
-        static_assert(Rules::MAX_USER_KOMI == 150.0f, "");
-        const char* msg = "Must be a integer or half-integer from -150.0 to 150.0";
+        static_assert(Rules::MIN_USER_KOMI == -400.0f, "");
+        static_assert(Rules::MAX_USER_KOMI == 400.0f, "");
+        const char* msg = "Must be a integer or half-integer from -400.0 to 400.0";
         bool suc = parseDouble(input, "komi", komi, Rules::MIN_USER_KOMI, Rules::MAX_USER_KOMI, msg);
         if(!suc)
           continue;
         rules.komi = (float)komi;
         if(!Rules::komiIsIntOrHalfInt(rules.komi)) {
-          reportErrorForId(rbase.id, "rules", msg);
+          reportErrorForId(rbase.id, "komi", msg);
           continue;
         }
       }
@@ -1019,6 +1033,11 @@ int MainCmds::analysis(const vector<string>& args) {
         if(!suc)
           continue;
       }
+      if(input.find("includeNoResultValue") != input.end()) {
+        bool suc = parseBoolean(input, "includeNoResultValue", rbase.includeNoResultValue, "Must be a boolean");
+        if(!suc)
+          continue;
+      }
       if(input.find("reportDuringSearchEvery") != input.end()) {
         bool suc = parseDouble(input, "reportDuringSearchEvery", rbase.reportDuringSearchEvery, 0.001, 1000000.0, "Must be number of seconds from 0.001 to 1000000.0");
         if(!suc)
@@ -1057,12 +1076,14 @@ int MainCmds::analysis(const vector<string>& args) {
           reportErrorForId(rbase.id, field, string("Must be a list of dicts with subfields 'player', 'moves', 'untilDepth'"));
           continue;
         }
-        if(hasAllowMoves && avoidParamsList.size() > 1) {
-          reportErrorForId(rbase.id, field, string("Currently allowMoves only allows one entry"));
+        if(hasAllowMoves && avoidParamsList.size() > 2) {
+          reportErrorForId(rbase.id, field, string("Currently allowMoves only allows at most one entry per player"));
           continue;
         }
 
         bool failed = false;
+        bool gotAllowMovesBlack = false;
+        bool gotAllowMovesWhite = false;
         for(size_t i = 0; i<avoidParamsList.size(); i++) {
           json& avoidParams = avoidParamsList[i];
           if(avoidParams.find("moves") == avoidParams.end() ||
@@ -1083,6 +1104,18 @@ int MainCmds::analysis(const vector<string>& args) {
           if(!suc) { failed = true; break; }
           suc = parseInteger(avoidParams, "untilDepth", untilDepth, 1, 1000000000, "Must be a positive integer");
           if(!suc) { failed = true; break; }
+
+          //For allowMoves, at most one entry per player is permitted. Two entries for the same player would be
+          //ambiguous/incorrect since the std::fill below for the second entry would wipe out the first entry's allowed locs.
+          //Two entries for different players are fine since they write to separate per-player vectors.
+          if(hasAllowMoves) {
+            bool& gotAllowMoves = avoidPla == P_BLACK ? gotAllowMovesBlack : gotAllowMovesWhite;
+            if(gotAllowMoves) {
+              reportErrorForId(rbase.id, field, string("Cannot specify allowMoves more than once for the same player"));
+              failed = true; break;
+            }
+            gotAllowMoves = true;
+          }
 
           vector<int>& avoidMoveUntilByLoc = avoidPla == P_BLACK ? rbase.avoidMoveUntilByLocBlack : rbase.avoidMoveUntilByLocWhite;
           avoidMoveUntilByLoc.resize(Board::MAX_ARR_SIZE);
@@ -1125,7 +1158,10 @@ int MainCmds::analysis(const vector<string>& args) {
       }
 
       Player nextPla = initialPlayer;
-      BoardHistory hist(board,nextPla,rules,0);
+      //Keep this request's history consistent with the pass-alive computation mode that the search
+      //for this request will resolve to. (The search would re-stamp its own copy anyway, but this keeps
+      //any adjudication done during request setup/replay consistent with it.)
+      BoardHistory hist(board,nextPla,rules,0,Search::resolveAlwaysComputePassAliveUnderSuicideRules(rbase.params, nnEval));
       hist.setAssumeMultipleStartingBlackMovesAreHandicap(assumeMultipleStartingBlackMovesAreHandicap);
 
       if(warnUnusedFields) {
@@ -1142,8 +1178,8 @@ int MainCmds::analysis(const vector<string>& args) {
         if(shouldAnalyze[turnNumber]) {
           int64_t priority = rbase.priority;
           if(priorities.size() > 0) {
-            assert(priorities.size() > newRequests.size());
-            assert(priorities.find(turnNumber) != priorities.end());
+            testAssert(priorities.size() > newRequests.size());
+            testAssert(priorities.find(turnNumber) != priorities.end());
             priority = priorities[turnNumber];
           }
 
@@ -1163,6 +1199,7 @@ int MainCmds::analysis(const vector<string>& args) {
           newRequest->includeMovesOwnershipStdev = rbase.includeMovesOwnershipStdev;
           newRequest->includePolicy = rbase.includePolicy;
           newRequest->includePVVisits = rbase.includePVVisits;
+          newRequest->includeNoResultValue = rbase.includeNoResultValue;
           newRequest->reportDuringSearch = rbase.reportDuringSearch;
           newRequest->reportDuringSearchEvery = rbase.reportDuringSearchEvery;
           newRequest->firstReportDuringSearchAfter = rbase.firstReportDuringSearchAfter;
@@ -1211,8 +1248,7 @@ int MainCmds::analysis(const vector<string>& args) {
         //Compare first by user-provided priority, and next breaks ties by preferring earlier requests.
         std::pair<int64_t,int64_t> priorityKey = std::make_pair(newRequests[i]->priority, -numRequestsSoFar);
         bool suc = toAnalyzeQueue.forcePush( std::make_pair(priorityKey, newRequests[i]) );
-        assert(suc);
-        (void)suc;
+        testAssert(suc);
         numRequestsSoFar++;
       }
       newRequests.clear();

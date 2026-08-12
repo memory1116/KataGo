@@ -6,7 +6,11 @@
 #ifdef NO_GIT_REVISION
 #define GIT_REVISION "<omitted>"
 #else
-#include "program/gitinfo.h"
+// Angle-bracket (not quoted) include so this resolves ONLY via the -I search
+// paths, where the build dir's freshly-generated program/gitinfo.h lives. A
+// quoted include would search main.cpp's own directory first and pick up a
+// stale in-source cpp/program/gitinfo.h left over from an in-source build.
+#include <program/gitinfo.h>
 #endif
 
 #include <sstream>
@@ -28,6 +32,8 @@ static void printHelp(const vector<string>& args) {
 
 gtp : Runs GTP engine that can be plugged into any standard Go GUI for play/analysis.
 benchmark : Test speed with different numbers of search threads.
+benchmarknn : Benchmark pure neural-net forward throughput (no preprocessing, postprocessing, H2D/D2H, or search).
+replaynn : Replay a fixed .npz input corpus and dump raw per-head logits for accuracy regression.
 genconfig : User-friendly interface to generate a config with rules and automatic performance tuning.
 
 contribute : Connect to online distributed KataGo training and run perpetually contributing selfplay games.
@@ -45,6 +51,8 @@ gatekeeper : Poll directory for new nets and match them against the latest net s
 
 ---Testing/debugging subcommands-------------
 evalsgf : Utility/debug tool, analyze a single position of a game from an SGF file.
+searchentropyanalysis : Analyze search entropy across test datasets.
+selfplaysurprisedump : Run selfplay games with a fixed model and dump per-position policy/value surprise stats to csv.
 
 testgpuerror : Print the average error of the neural net between current config and fp32 config.
 
@@ -70,11 +78,15 @@ static int handleSubcommand(const string& subcommand, const vector<string>& args
   vector<string> subArgs(args.begin()+1,args.end());
   if(subcommand == "analysis")
     return MainCmds::analysis(subArgs);
-  if(subcommand == "benchmark")
+  else if(subcommand == "benchmark")
     return MainCmds::benchmark(subArgs);
-  if(subcommand == "contribute")
+  else if(subcommand == "benchmarknn")
+    return MainCmds::benchmarknn(subArgs);
+  else if(subcommand == "replaynn")
+    return MainCmds::replaynn(subArgs);
+  else if(subcommand == "contribute")
     return MainCmds::contribute(subArgs);
-  if(subcommand == "evalsgf")
+  else if(subcommand == "evalsgf")
     return MainCmds::evalsgf(subArgs);
   else if(subcommand == "gatekeeper")
     return MainCmds::gatekeeper(subArgs);
@@ -120,6 +132,8 @@ static int handleSubcommand(const string& subcommand, const vector<string>& args
     return MainCmds::runnnonmanyposestest(subArgs);
   else if(subcommand == "runnnbatchingtest")
     return MainCmds::runnnbatchingtest(subArgs);
+  else if(subcommand == "runnngtpstresstest")
+    return MainCmds::runnngtpstresstest(subArgs);
   else if(subcommand == "runtinynntests")
     return MainCmds::runtinynntests(subArgs);
   else if(subcommand == "runnnevalcanarytests")
@@ -138,20 +152,28 @@ static int handleSubcommand(const string& subcommand, const vector<string>& args
     return MainCmds::checkbook(subArgs);
   else if(subcommand == "booktoposes")
     return MainCmds::booktoposes(subArgs);
+  else if(subcommand == "comparebooks")
+    return MainCmds::comparebooks(subArgs);
+  else if(subcommand == "findbookbottlenecks")
+    return MainCmds::findbookbottlenecks(subArgs);
   else if(subcommand == "trystartposes")
     return MainCmds::trystartposes(subArgs);
   else if(subcommand == "viewstartposes")
     return MainCmds::viewstartposes(subArgs);
   else if(subcommand == "checksgfhintpolicy")
     return MainCmds::checksgfhintpolicy(subArgs);
-  else if(subcommand == "demoplay")
-    return MainCmds::demoplay(subArgs);
+  else if(subcommand == "genposesfromselfplayinit")
+    return MainCmds::genposesfromselfplayinit(subArgs);
   else if(subcommand == "writetrainingdata")
     return MainCmds::writetrainingdata(subArgs);
   else if(subcommand == "sampleinitializations")
     return MainCmds::sampleinitializations(subArgs);
   else if(subcommand == "evalrandominits")
     return MainCmds::evalrandominits(subArgs);
+  else if(subcommand == "searchentropyanalysis")
+    return MainCmds::searchentropyanalysis(subArgs);
+  else if(subcommand == "selfplaysurprisedump")
+    return MainCmds::selfplaysurprisedump(subArgs);
   else if(subcommand == "runbeginsearchspeedtest")
     return MainCmds::runbeginsearchspeedtest(subArgs);
   else if(subcommand == "runownershipspeedtest")
@@ -212,11 +234,11 @@ int main(int argc, const char* const* argv) {
 
 
 string Version::getKataGoVersion() {
-  return string("1.16.2");
+  return string("1.17.2");
 }
 
 string Version::getKataGoVersionForHelp() {
-  return string("KataGo v1.16.2");
+  return string("KataGo v1.17.2");
 }
 
 string Version::getKataGoVersionFullInfo() {

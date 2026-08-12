@@ -1,0 +1,1365 @@
+{
+  "apply": {
+    "per_batch_tactic_overrides": {
+      "12": "cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true"
+    },
+    "topology": {
+      "cudaDeviceToUseThread0": 1,
+      "cudaDeviceToUseThread1": 1,
+      "cudaSm89Backend": true,
+      "cudaSm89Forward": true,
+      "numNNServerThreadsPerModel": 2
+    }
+  },
+  "batches": [
+    12
+  ],
+  "coverage": {
+    "dual_ffn": {
+      "12": {
+        "expected_count": 11,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 11,
+        "stable_long_count": 0
+      }
+    },
+    "fa4": {
+      "12": {
+        "expected_count": 7,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 7,
+        "stable_long_count": 0
+      }
+    },
+    "fused_residual": {
+      "12": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "head_bn": {
+      "12": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "initial_conv": {
+      "12": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "initial_global": {
+      "12": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "l2": {
+      "12": {
+        "expected_count": 11,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 11,
+        "stable_long_count": 0
+      }
+    },
+    "linear2": {
+      "12": {
+        "expected_count": 13,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 13,
+        "stable_long_count": 0
+      }
+    },
+    "outproj": {
+      "12": {
+        "expected_count": 7,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 7,
+        "stable_long_count": 0
+      }
+    },
+    "pointwise": {
+      "12": {
+        "expected_count": 7,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 7,
+        "stable_long_count": 0
+      }
+    },
+    "policy_p1": {
+      "12": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "postconv_bn": {
+      "12": {
+        "expected_count": 12,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 12,
+        "stable_long_count": 0
+      }
+    },
+    "preconv": {
+      "12": {
+        "expected_count": 8,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 8,
+        "stable_long_count": 0
+      }
+    },
+    "qkv_rope": {
+      "12": {
+        "expected_count": 14,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 14,
+        "stable_long_count": 0
+      }
+    },
+    "rmsnorm": {
+      "12": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "value_terminal": {
+      "12": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 1
+      }
+    },
+    "weight_sharing": {
+      "12": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "wide_head": {
+      "12": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "wide_projection": {
+      "12": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    }
+  },
+  "families": {
+    "dual_ffn": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2",
+              "SM89 backend: runtime tactic active: cudaUseWideFFN"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaDualFfnCutlassTacticSm89": "m128-n64-k32-w64-n32-s3-sw2-tanh-half2",
+              "cudaFusedFFNAotTacticSm89": "disabled",
+              "cudaUseWideFFN": true
+            },
+            "history_family": "dual_ffn",
+            "id": "dual-cutlass-m128-n64-k32-w64-n32-s3-sw2-tanh-half2",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseWideFFN"
+            ]
+          },
+          "candidate_id": "dual-cutlass-m128-n64-k32-w64-n32-s3-sw2-tanh-half2",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3012.629669,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3012.629669
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "fa4": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaFlashAttentionTacticSm89": "d32-m64-n96-w4-pack0-both16"
+            },
+            "history_family": "fa4",
+            "id": "fa4-d32-m64-n96-w4-pack0-both16",
+            "implementation": "config"
+          },
+          "candidate_id": "fa4-d32-m64-n96-w4-pack0-both16",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3083.983001,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3083.983001
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "fused_residual": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseFusedResidual"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaUseFusedResidual": true
+            },
+            "history_family": "fused_residual",
+            "id": "fused_residual-on",
+            "implementation": "config"
+          },
+          "candidate_id": "fused_residual-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3076.090176,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3076.090176
+          ],
+          "overridden_keys": {
+            "cudaUseFusedResidual": "linear2"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "head_bn": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "batch": 12,
+            "config": {
+              "cudaUseHeadBNHalfToFloat": false
+            },
+            "history_family": "head_bn",
+            "id": "head_bn-off",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseHeadBNHalfToFloat"
+            ]
+          },
+          "candidate_id": "head_bn-off",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3105.538642,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3105.538642
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "initial_conv": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "batch": 12,
+            "config": {
+              "cudaUseInitialConvFrontend": false
+            },
+            "history_family": "initial_conv",
+            "id": "initial_conv-off",
+            "implementation": "config"
+          },
+          "candidate_id": "initial_conv-off",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3101.223982,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3101.223982
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "initial_global": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "batch": 12,
+            "config": {
+              "cudaUseInitialGlobalMatMulAdd": false
+            },
+            "history_family": "initial_global",
+            "id": "initial_global-off",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseInitialGlobalMatMulAdd"
+            ]
+          },
+          "candidate_id": "initial_global-off",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3102.04492,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3102.04492
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "l2": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUsePersistingL2Inner",
+              "SM89 backend: runtime tactic active: cudaUsePersistingL2Trunk"
+            ],
+            "actual_grant_limited": true,
+            "batch": 12,
+            "config": {
+              "cudaPersistingL2HitRatioSm89": 1.0,
+              "cudaUsePersistingL2Inner": true,
+              "cudaUsePersistingL2Trunk": true
+            },
+            "history_family": "l2",
+            "id": "l2-b12-trunk-inner-r1p0",
+            "implementation": "config"
+          },
+          "candidate_id": "l2-b12-trunk-inner-r1p0",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3097.330619,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3097.330619
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "linear2": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1",
+              "SM89 backend: runtime tactic active: cudaUseFusedResidual"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaLinear2AotTacticSm89": "disabled",
+              "cudaLinear2CutlassTacticSm89": "m128-n128-k32-w64-n32-s4-sw1",
+              "cudaUseFusedResidual": true,
+              "cudaUseLinear2PostBNSiluSm89": false
+            },
+            "history_family": "linear2",
+            "id": "linear2-cutlass-m128-n128-k32-w64-n32-s4-sw1",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseFusedResidual"
+            ]
+          },
+          "candidate_id": "linear2-cutlass-m128-n128-k32-w64-n32-s4-sw1",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3104.201916,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3104.201916
+          ],
+          "overridden_keys": {
+            "cudaUseFusedResidual": "outproj",
+            "cudaUseLinear2PostBNSiluSm89": "pointwise"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "outproj": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1",
+              "SM89 backend: runtime tactic active: cudaUseFusedResidual"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaOutProjCutlassTacticSm89": "m128-n128-k32-w64-n64-s3-sw1",
+              "cudaUseFusedResidual": true
+            },
+            "history_family": "outproj",
+            "id": "outproj-cutlass-m128-n128-k32-w64-n64-s3-sw1",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseFusedResidual"
+            ]
+          },
+          "candidate_id": "outproj-cutlass-m128-n128-k32-w64-n64-s3-sw1",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3102.660892,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3102.660892
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "pointwise": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseScaleBiasSiluVec8C384Sm89",
+              "SM89 backend: runtime tactic active: cudaUseScaleBiasSiluVec8Sm89"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaUseLinear2PostBNSiluSm89": false,
+              "cudaUsePostConvBNSiluSm89": false,
+              "cudaUseScaleBiasSiluVec4C384Sm89": false,
+              "cudaUseScaleBiasSiluVec8C384Sm89": true,
+              "cudaUseScaleBiasSiluVec8Sm89": true
+            },
+            "history_family": "pointwise",
+            "id": "pointwise-c768-vec8-c384-vec8",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseLinear2PostBNSiluSm89"
+            ],
+            "supersedes": [
+              "postconv_bn"
+            ]
+          },
+          "candidate_id": "pointwise-c768-vec8-c384-vec8",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3068.639351,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3068.639351
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "policy_p1": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaPolicyP1RowsPerBlockSm89=5"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaPolicyP1RowsPerBlockSm89": 5
+            },
+            "history_family": "policy_p1",
+            "id": "policy-p1-block96x5",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaPolicyP1RowsPerBlockSm89"
+            ]
+          },
+          "candidate_id": "policy-p1-block96x5",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3096.614393,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3096.614393
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "postconv_bn": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaPostConvCutlassTacticSm89": "m128-n128-k32-w64-n64-s3-sw1",
+              "cudaUsePostConvBNSiluSm89": false
+            },
+            "history_family": "postconv_bn",
+            "id": "postconv-cutlass-m128-n128-k32-w64-n64-s3-sw1",
+            "implementation": "config"
+          },
+          "candidate_id": "postconv-cutlass-m128-n128-k32-w64-n64-s3-sw1",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2435.064948,
+          "effective": false,
+          "history_accumulated_overrides": null,
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=disabled,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=disabled,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=false,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2435.064948
+          ],
+          "overridden_keys": {
+            "cudaUsePostConvBNSiluSm89": "pointwise"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": "pointwise"
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "preconv": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaPreConvCutlassTacticSm89": "m128-n128-k32-w64-n64-s4-sw1"
+            },
+            "history_family": "preconv",
+            "id": "preconv-cutlass-m128-n128-k32-w64-n64-s4-sw1",
+            "implementation": "config"
+          },
+          "candidate_id": "preconv-cutlass-m128-n128-k32-w64-n64-s4-sw1",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3105.74437,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3105.74437
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "qkv_rope": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseQKVRoPEGemmSm89",
+              "SM89 backend: runtime tactic active: cudaUseWideQKV"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaPlainQKVVariantSm89": 0,
+              "cudaRoPEBatchGroupSm89": 1,
+              "cudaUseFusedQKRoPE": false,
+              "cudaUsePrecomputedQKRoPESm89": false,
+              "cudaUseQKVRoPEGemmSm89": true,
+              "cudaUseSplitQKVRoPEGemmSm89": false,
+              "cudaUseWideQKV": true
+            },
+            "history_family": "qkv_rope",
+            "id": "qkv-rope-gemm-epilogue",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseWideQKV"
+            ]
+          },
+          "candidate_id": "qkv-rope-gemm-epilogue",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3129.694557,
+          "effective": true,
+          "history_accumulated_overrides": null,
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3129.694557
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "rmsnorm": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseRMSNormOpt"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaRMSNormRowsPerBlockSm89": 4,
+              "cudaUseRMSNormOpt": true
+            },
+            "history_family": "rmsnorm",
+            "id": "rmsnorm-warps4",
+            "implementation": "config"
+          },
+          "candidate_id": "rmsnorm-warps4",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3078.716736,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3078.716736
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "value_terminal": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "batch": 12,
+            "config": {
+              "cudaUseFusedValueTerminalSm89": false
+            },
+            "history_family": "value_terminal",
+            "id": "value_terminal-off",
+            "implementation": "config"
+          },
+          "candidate_id": "value_terminal-off",
+          "correctness": {
+            "candidate_sha256": "837b289497510b89754eb79c5d3368d92b71c51f78d3f510ceb501712f41d805",
+            "checks": {
+              "ownership_sigmoid_rmse": true,
+              "policy_probability_rmse": true,
+              "policy_top1": true,
+              "request_ownership_probability_abs": true,
+              "request_ownership_probability_rmse": true,
+              "request_policy_probability_abs": true,
+              "request_policy_probability_rmse": true,
+              "request_score_raw_abs": true,
+              "request_score_raw_rmse": true,
+              "request_value_probability_abs": true,
+              "request_value_probability_rmse": true,
+              "rows": true,
+              "score_mean_rmse": true,
+              "value_outcome_rmse": true,
+              "weighted_p0loss_delta": true
+            },
+            "comparison_sha256": "20076e54c17d49259716aa63ab3b0286c372b7b79dc671d93002f45e7006cb3b",
+            "kind": "8192-row all-head FP32-reference replay",
+            "metrics": {
+              "ownership_sigmoid_rmse": 0.00031378085259348154,
+              "policy_probability_rmse": 0.0001340649469057098,
+              "policy_top1_vs_reference": 0.996826171875,
+              "request_gate": {
+                "ownershipProbability": {
+                  "maximumAbs": 0.014648228883743286,
+                  "maximumAbsIndex": 232,
+                  "maximumAbsRow": 1643,
+                  "maximumRmse": 0.0016501951031386852,
+                  "maximumRmseRow": 1787
+                },
+                "policyProbability": {
+                  "maximumAbs": 0.016702264547348022,
+                  "maximumAbsIndex": 109,
+                  "maximumAbsRow": 1799,
+                  "maximumRmse": 0.000981197110377252,
+                  "maximumRmseRow": 1643
+                },
+                "scoreRaw": {
+                  "maximumAbs": 0.5564875602722168,
+                  "maximumAbsIndex": 4,
+                  "maximumAbsRow": 1017,
+                  "maximumRmse": 0.24087132513523102,
+                  "maximumRmseRow": 1017
+                },
+                "valueProbability": {
+                  "maximumAbs": 0.03864365816116333,
+                  "maximumAbsIndex": 1,
+                  "maximumAbsRow": 5420,
+                  "maximumRmse": 0.03154847398400307,
+                  "maximumRmseRow": 5420
+                }
+              },
+              "score_mean_rmse": 0.0020583681762218475,
+              "value_outcome_rmse": 0.002449566265568137,
+              "weighted_p0loss_delta": 0.00010037422180175781
+            },
+            "reference_sha256": "25c48ec159696b78e7cd6406b1d587bf80f5cf8a1bbc60671a36b9567265cb60",
+            "status": "passed",
+            "thresholds": {
+              "maximum_ownership_sigmoid_rmse": 0.001,
+              "maximum_policy_probability_rmse": 0.001,
+              "maximum_request_ownership_probability_abs": 0.025,
+              "maximum_request_ownership_probability_rmse": 0.006,
+              "maximum_request_policy_probability_abs": 0.025,
+              "maximum_request_policy_probability_rmse": 0.002,
+              "maximum_request_score_raw_abs": 0.6,
+              "maximum_request_score_raw_rmse": 0.3,
+              "maximum_request_value_probability_abs": 0.06,
+              "maximum_request_value_probability_rmse": 0.05,
+              "maximum_score_mean_rmse": 0.01,
+              "maximum_value_outcome_rmse": 0.01,
+              "maximum_weighted_p0loss_delta": 0.001,
+              "minimum_policy_top1_vs_reference": 0.995,
+              "minimum_rows": 8192
+            }
+          },
+          "discovery_nn_evals_per_sec": 3110.690824,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 1000,
+          "measurement_kind": "long_stable",
+          "measurement_relative_spread": 0.00013270621329998205,
+          "measurement_sample_count": 2,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3110.48442,
+            3110.897228
+          ],
+          "overridden_keys": {},
+          "source_result": "long-gate-best-certified.json",
+          "stable_long_nn_evals_per_sec": 3110.690824,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "weight_sharing": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaShareModelWeights"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaShareModelWeights": true
+            },
+            "history_family": "weight_sharing",
+            "id": "weight_sharing-on",
+            "implementation": "config"
+          },
+          "candidate_id": "weight_sharing-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3093.344798,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3093.344798
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "wide_head": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaPolicyP1RowsPerBlockSm89=5",
+              "SM89 backend: runtime tactic active: cudaUseWideHeadProjection"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaPolicyP1RowsPerBlockSm89": 5,
+              "cudaUseWideHeadProjection": true
+            },
+            "history_family": "wide_head",
+            "id": "wide-head-on",
+            "implementation": "config"
+          },
+          "candidate_id": "wide-head-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3104.510317,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3104.510317
+          ],
+          "overridden_keys": {
+            "cudaPolicyP1RowsPerBlockSm89": "policy_p1"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    },
+    "wide_projection": {
+      "batches": {
+        "12": {
+          "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseWideFFN",
+              "SM89 backend: runtime tactic active: cudaUseWideQKV"
+            ],
+            "batch": 12,
+            "config": {
+              "cudaUseWideFFN": true,
+              "cudaUseWideQKV": true
+            },
+            "history_family": "wide_projection",
+            "id": "wide-projection-both",
+            "implementation": "config"
+          },
+          "candidate_id": "wide-projection-both",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 3139.546629,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            3139.546629
+          ],
+          "overridden_keys": {
+            "cudaUseWideFFN": "dual_ffn",
+            "cudaUseWideQKV": "qkv_rope"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "b5c90517a6f1d76c586012747a92a35aefdbdd13d66ee3041d454b7d740b0847"
+    }
+  },
+  "final_joint": {
+    "12": {
+      "accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw2-tanh-half2,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s4-sw1,cudaOutProjCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=5,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=m128-n128-k32-w64-n64-s4-sw1,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm89=false,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=true,cudaUseScaleBiasSiluVec8Sm89=true,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=true,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnMaxBatchSize=12",
+      "binary_sha256": "02facb2e75a0434f7c54e017991bae387893c8050677b783e407d032172f57a8",
+      "candidate_id": "value_terminal-off",
+      "correctness": {
+        "candidate_sha256": "837b289497510b89754eb79c5d3368d92b71c51f78d3f510ceb501712f41d805",
+        "checks": {
+          "ownership_sigmoid_rmse": true,
+          "policy_probability_rmse": true,
+          "policy_top1": true,
+          "request_ownership_probability_abs": true,
+          "request_ownership_probability_rmse": true,
+          "request_policy_probability_abs": true,
+          "request_policy_probability_rmse": true,
+          "request_score_raw_abs": true,
+          "request_score_raw_rmse": true,
+          "request_value_probability_abs": true,
+          "request_value_probability_rmse": true,
+          "rows": true,
+          "score_mean_rmse": true,
+          "value_outcome_rmse": true,
+          "weighted_p0loss_delta": true
+        },
+        "comparison_sha256": "20076e54c17d49259716aa63ab3b0286c372b7b79dc671d93002f45e7006cb3b",
+        "kind": "8192-row all-head FP32-reference replay",
+        "metrics": {
+          "ownership_sigmoid_rmse": 0.00031378085259348154,
+          "policy_probability_rmse": 0.0001340649469057098,
+          "policy_top1_vs_reference": 0.996826171875,
+          "request_gate": {
+            "ownershipProbability": {
+              "maximumAbs": 0.014648228883743286,
+              "maximumAbsIndex": 232,
+              "maximumAbsRow": 1643,
+              "maximumRmse": 0.0016501951031386852,
+              "maximumRmseRow": 1787
+            },
+            "policyProbability": {
+              "maximumAbs": 0.016702264547348022,
+              "maximumAbsIndex": 109,
+              "maximumAbsRow": 1799,
+              "maximumRmse": 0.000981197110377252,
+              "maximumRmseRow": 1643
+            },
+            "scoreRaw": {
+              "maximumAbs": 0.5564875602722168,
+              "maximumAbsIndex": 4,
+              "maximumAbsRow": 1017,
+              "maximumRmse": 0.24087132513523102,
+              "maximumRmseRow": 1017
+            },
+            "valueProbability": {
+              "maximumAbs": 0.03864365816116333,
+              "maximumAbsIndex": 1,
+              "maximumAbsRow": 5420,
+              "maximumRmse": 0.03154847398400307,
+              "maximumRmseRow": 5420
+            }
+          },
+          "score_mean_rmse": 0.0020583681762218475,
+          "value_outcome_rmse": 0.002449566265568137,
+          "weighted_p0loss_delta": 0.00010037422180175781
+        },
+        "reference_sha256": "25c48ec159696b78e7cd6406b1d587bf80f5cf8a1bbc60671a36b9567265cb60",
+        "status": "passed",
+        "thresholds": {
+          "maximum_ownership_sigmoid_rmse": 0.001,
+          "maximum_policy_probability_rmse": 0.001,
+          "maximum_request_ownership_probability_abs": 0.025,
+          "maximum_request_ownership_probability_rmse": 0.006,
+          "maximum_request_policy_probability_abs": 0.025,
+          "maximum_request_policy_probability_rmse": 0.002,
+          "maximum_request_score_raw_abs": 0.6,
+          "maximum_request_score_raw_rmse": 0.3,
+          "maximum_request_value_probability_abs": 0.06,
+          "maximum_request_value_probability_rmse": 0.05,
+          "maximum_score_mean_rmse": 0.01,
+          "maximum_value_outcome_rmse": 0.01,
+          "maximum_weighted_p0loss_delta": 0.001,
+          "minimum_policy_top1_vs_reference": 0.995,
+          "minimum_rows": 8192
+        }
+      },
+      "family": "value_terminal",
+      "measurement_iterations": 1000,
+      "measurement_kind": "long_stable",
+      "measurement_relative_spread": 0.00013270621329998205,
+      "measurement_sample_count": 2,
+      "measurement_warmup": 80,
+      "nn_evals_per_sec_samples": [
+        3110.48442,
+        3110.897228
+      ],
+      "source_result": "long-gate-best-certified.json",
+      "stable_long_nn_evals_per_sec": 3110.690824
+    }
+  },
+  "generated_utc": "2026-08-10T07:17:54.438200+00:00",
+  "identity_missing": [],
+  "kind": "cuda-tactic-plan",
+  "missing": [],
+  "plan_id": "sm89-rtx4090-5b11ed364f15e49b",
+  "plan_sha256": "5b11ed364f15e49b94b5eb5a3de2131743d81777e7b2cb878be00718dcce92e0",
+  "positive_history_closure": {
+    "architecture": "sm89",
+    "complete": true,
+    "contract_sha256": "f5ea425afa20beee9234db3745f95cc7dc0fe101da0eb81d58b52f23b4ba64ee",
+    "links": [
+      "backend",
+      "scan_candidate",
+      "activation",
+      "plan_apply"
+    ],
+    "record_count": 60,
+    "record_ids": [
+      "sm89-stage2-wide-projection-bundle",
+      "sm89-stage3-residual-beta1",
+      "sm89-stage4-rms-warps4",
+      "sm89-stage39-rms-warps8",
+      "sm89-stage5-fused-qk-rope",
+      "sm89-stage14-precomputed-rope",
+      "sm89-stage15-group2-rope",
+      "sm89-stage16-qkv-rope-epilogue",
+      "sm89-stage30-qkv-rope-epilogue-table",
+      "sm89-stage64-split-qkv-rope",
+      "sm89-stage65-native-half-qkv",
+      "sm89-stage7-fa4-native-d32-m128n112",
+      "sm89-stage7-fa4-m128n96",
+      "sm89-stage7-fa4-m64n96-pack-gqa",
+      "sm89-stage7-fa4-m64n96-unpacked",
+      "sm89-stage59-fa4-both16",
+      "sm89-stage8-dual-ffn-sw2",
+      "sm89-stage8-dual-ffn-sw4",
+      "sm89-stage62-dual-ffn-half2-tanh",
+      "sm89-stage9-linear2-w64n32-s3",
+      "sm89-stage9-linear2-w64n32-s4",
+      "sm89-stage9-linear2-w64n64-s3",
+      "sm89-stage9-linear2-w64n64-s4",
+      "sm89-stage9-linear2-w64n64-s5",
+      "sm89-stage9-linear2-w64n64-s6",
+      "sm89-stage57-linear2-postbn",
+      "sm89-stage10-outproj-w64n32-s2",
+      "sm89-stage10-outproj-w64n32-s3",
+      "sm89-stage10-outproj-w64n32-s4",
+      "sm89-stage10-outproj-w64n64-s3",
+      "sm89-stage10-outproj-w64n64-s4",
+      "sm89-stage11-preconv-w64n32-s3",
+      "sm89-stage11-preconv-w64n32-s4",
+      "sm89-stage11-preconv-w64n64-s3",
+      "sm89-stage11-preconv-w64n64-s4",
+      "sm89-stage11-preconv-w64n64-s5",
+      "sm89-stage11-preconv-w64n64-s6",
+      "sm89-stage12-postconv-w64n32-s2-sw1",
+      "sm89-stage12-postconv-w64n32-s3-sw1",
+      "sm89-stage12-postconv-w64n32-s3-sw2",
+      "sm89-stage12-postconv-w64n64-s3-sw1",
+      "sm89-stage12-postconv-w64n64-s3-sw2",
+      "sm89-stage12-postconv-w64n64-s3-sw4",
+      "sm89-stage12-postconv-m128n256",
+      "sm89-stage12-postconv-m256n128-sw1",
+      "sm89-stage12-postconv-m256n128-sw2",
+      "sm89-stage56-postconv-bn-silu",
+      "sm89-stage22-c768-vec8",
+      "sm89-stage34-c384-vec8",
+      "sm89-stage54-c384-vec4",
+      "sm89-stage20-l2-trunk",
+      "sm89-stage21-l2-trunk-inner",
+      "sm89-stage24-initial-conv",
+      "sm89-stage27-initial-global",
+      "sm89-stage25-policy-p1-v1",
+      "sm89-stage25-policy-p1-v2",
+      "sm89-stage28-wide-head",
+      "sm89-stage52-intrinsic-head-bundle",
+      "sm89-stage29-head-bn",
+      "sm89-stage51-value-terminal"
+    ],
+    "validated_batches": [
+      12
+    ]
+  },
+  "production_ready": true,
+  "ready_for_scan_bypass": true,
+  "reproducibility": {
+    "notes": [
+      "Full commands and environment snapshots remain in the content-addressed scan results, not in this runtime plan.",
+      "The receiving device must match architecture/GPU class and stream topology; producer device ordinal may change."
+    ]
+  },
+  "schema": 1,
+  "selection": {
+    "maximum_relative_spread": 0.1,
+    "method": "history-ordered accumulated coordinate winners; final joint long-stable row",
+    "metric": "stable long natural whole-graph combined nnEval/s",
+    "minimum_iterations": 1000,
+    "minimum_samples": 2,
+    "short_scan_values_are_never_final": true
+  },
+  "source_results": [
+    {
+      "family": "",
+      "finished_utc": "2026-08-10T06:53:50.399067+00:00",
+      "name": "discovery.json",
+      "rows": 123,
+      "sha256": "e88893c8aed8aed8c7845c9126a9ccd5c70a2a7361d36f3a9744899ea414c313"
+    },
+    {
+      "family": null,
+      "finished_utc": "2026-08-10T07:09:37.070624+00:00",
+      "name": "long-gate-best-certified.json",
+      "rows": 1,
+      "sha256": "262ed83bb13412ccb011af5a5b991a3407306607131f4521006cc35b961b447f"
+    }
+  ],
+  "status": "complete_long_stable",
+  "target": {
+    "architecture": "sm89",
+    "compute_capability": [
+      8,
+      9
+    ],
+    "config_sha256": "cd6cc3751144099652e9a72ba67c6201f74931e2370516dd26538f3e37555fa5",
+    "cuda_device_capabilities_at_scan": [
+      {
+        "asyncEngineCount": 2,
+        "clockRateKhz": 2520000,
+        "computeCapabilityMajor": 8,
+        "computeCapabilityMinor": 9,
+        "concurrentKernels": true,
+        "l2CacheSize": 75497472,
+        "maxThreadsPerBlock": 1024,
+        "maxThreadsPerMultiProcessor": 1536,
+        "memoryBusWidth": 384,
+        "memoryClockRateKhz": 10501000,
+        "multiProcessorCount": 114,
+        "name": "NVIDIA GeForce RTX 4090 D",
+        "ordinal": 1,
+        "regsPerMultiprocessor": 65536,
+        "sharedMemPerBlockOptin": 101376,
+        "sharedMemPerMultiprocessor": 102400,
+        "totalGlobalMem": 25252724736,
+        "warpSize": 32
+      }
+    ],
+    "device_ordinal_at_scan": 1,
+    "device_ordinals_at_scan": [
+      1
+    ],
+    "fixed_board": [
+      19,
+      19
+    ],
+    "gpu_class": "rtx4090",
+    "model_sha256": "1881600caab9e9d85a3dd6a019e9b8e7d2c237b5f984e13ed49a8645be3077c6",
+    "precision": "FP16/NHWC",
+    "streams": 2
+  }
+}

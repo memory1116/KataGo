@@ -3,12 +3,17 @@
 
 #include "../core/global.h"
 #include "../core/commontypes.h"
+#include "../core/config_parser.h"
 #include "../core/hash.h"
 #include "../core/logger.h"
 #include "../neuralnet/desc.h"
 #include "../neuralnet/nninputs.h"
 
-//Defined in nneval.h
+#include <atomic>
+#include <chrono>
+#include <thread>
+
+// Defined in nneval.h
 struct NNResultBuf;
 
 // A handle to cross-thread cross-gpu initialization state.
@@ -26,6 +31,48 @@ struct InputBuffers;
 // A handle to the loaded neural network model.
 struct LoadedModel;
 
+// Optional one-shot barrier for diagnosing multi-stream phase sensitivity in benchmarknn.
+// A negative CLI offset leaves this unused and preserves the normal benchmark path.
+struct BenchmarkForwardBarrier {
+  const int participants;
+  std::atomic<int> ready;
+  std::atomic<bool> release;
+
+  explicit BenchmarkForwardBarrier(int participants_)
+    : participants(participants_), ready(0), release(false) {}
+
+  void arriveAndWait(int threadIdx, int phaseOffsetMicros) {
+    ready.fetch_add(1,std::memory_order_acq_rel);
+    while(ready.load(std::memory_order_acquire) < participants)
+      std::this_thread::yield();
+    release.store(true,std::memory_order_release);
+    while(!release.load(std::memory_order_acquire))
+      std::this_thread::yield();
+    if(threadIdx > 0 && phaseOffsetMicros > 0) {
+      const auto deadline = std::chrono::steady_clock::now() +
+        std::chrono::microseconds((long long)threadIdx * phaseOffsetMicros);
+      while(std::chrono::steady_clock::now() < deadline)
+        std::this_thread::yield();
+    }
+  }
+};
+
+// Raw per-head output pointers filled by getRawNNOutputs() after a getOutput() call. All arrays
+// are host memory owned by the InputBuffers; the layout of the policy arrays depends on the
+// backend (CUDA: NHWC position-major with numPolicyChannels floats per position; TensorRT: NCHW
+// channel-major). The element counts are per single row.
+struct RawNNOutputs {
+  const float* policyPassResults;
+  const float* policyResults;
+  const float* valueResults;
+  const float* scoreValueResults;
+  const float* ownershipResults;
+  size_t numPolicyChannels;
+  size_t numValueChannels;
+  size_t numScoreValueChannels;
+  size_t numOwnershipChannels;
+};
+
 // Generic interface to neural net inference.
 // There is a single CUDA backend.
 namespace NeuralNet {
@@ -34,7 +81,7 @@ namespace NeuralNet {
   // Call globalCleanup() at program termination.
   void globalCleanup();
 
-  //Print available backend devices
+  // Print available backend devices
   void printDevices();
 
   // Model I/O -----------------------------------------------------------------
@@ -47,23 +94,30 @@ namespace NeuralNet {
   // Context -------------------------------------------------------------------
 
   ComputeContext* createComputeContext(
-    //The indices of all gpus that this context will be used for.
-    //-1 as an entry indicates to select a default
+    // The indices of all gpus that this context will be used for.
+    // -1 as an entry indicates to select a default
     const std::vector<int>& gpuIdxs,
     Logger* logger,
     int nnXLen,
     int nnYLen,
-    const std::string& openCLTunerFile,
     const std::string& homeDataDirOverride,
-    bool openCLReTunePerBoardSize,
     enabled_t useFP16Mode,
-    enabled_t useNHWCMode,
-    const LoadedModel* loadedModel
+    const LoadedModel* loadedModel,
+    // Config that the backend may consult for its own custom options (e.g. OpenCL tuner file, cuDNN
+    // SDPA disable). Backends read whatever keys they care about directly off of this.
+    ConfigParser& cfg
   );
-  //A ComputeContext should NOT be freed until all ComputeHandles created using it have also been freed.
+  // A ComputeContext should NOT be freed until all ComputeHandles created using it have also been freed.
   void freeComputeContext(ComputeContext* computeContext);
 
   // Compute Handle -----------------------------------------------------------------
+
+  // Create an execution stream owned by the caller and borrowed by a ComputeHandle.
+  // CUDA returns an opaque device-aware stream wrapper and requires it to be
+  // passed to createComputeHandle. Backends without an explicit stream return
+  // NULL. Free the ComputeHandle before its stream.
+  void* createComputeStream(int gpuIdxForThisThread);
+  void freeComputeStream(void* computeStream);
 
   // Any given thread should only ever create one of these at a time.
   // When using the CUDA backend, will mutably set the GPU that this thread is
@@ -80,25 +134,32 @@ namespace NeuralNet {
     bool requireExactNNLen,
     bool inputsUseNHWC,
     int gpuIdxForThisThread,
-    int serverThreadIdx
+    int serverThreadIdx,
+    void* computeStream
   );
   void freeComputeHandle(ComputeHandle* computeHandle);
 
   bool isUsingFP16(const ComputeHandle* computeHandle);
+
+  // Set whether the handle is currently being used in a warmup mode, returning the previous value.
+  // Currently only used during maybeWarmupComputeHandle to indicate for the CUDA backend that failures should
+  // be a bit more lenient: during warmup a failed cudnn SDPA execution falls back to the custom kernel and
+  // disables SDPA going forward, whereas outside of warmup such a failure is fatal.
+  bool setIsWarmup(const ComputeHandle* computeHandle, bool isWarmup);
 
   //Input Buffers ---------------------------------------------------------------
 
   InputBuffers* createInputBuffers(const LoadedModel* loadedModel, int maxBatchSize, int nnXLen, int nnYLen);
   void freeInputBuffers(InputBuffers* buffers);
 
-  //The neural net takes in 2 tensors as input.
-  //One of them ("spatial") is 3-dimensional per-batch-element (4-dimensional including the batch dimension N),
-  //containing floats for the values of different features (C) across the space of the board (H,W),
-  //such as placement of stones and prior move locations.
-  //The other ("global") is 1-dimensional per-batch-element containing floats for features that are
-  //global to the board state, such as game rules and komi.
+  // The neural net takes in 2 tensors as input.
+  // One of them ("spatial") is 3-dimensional per-batch-element (4-dimensional including the batch dimension N),
+  // containing floats for the values of different features (C) across the space of the board (H,W),
+  // such as placement of stones and prior move locations.
+  // The other ("global") is 1-dimensional per-batch-element containing floats for features that are
+  // global to the board state, such as game rules and komi.
 
-  //Perform Neural Net Evals ---------------------------------------------------------
+  // Perform Neural Net Evals ---------------------------------------------------------
 
   // Preconditions:
   // buffers inputBufs[nIdx]->{rowSpatial,rowGlobal} have been filled with input data for all values of nIdx in [0,numBatchEltsFilled-1]
@@ -115,14 +176,70 @@ namespace NeuralNet {
     std::vector<NNOutput*>& outputs
   );
 
+#ifdef USE_CUDA_BACKEND
+  // Opt-in single-device-slot pipeline. CPU packing and postprocessing stay on
+  // the scheduler thread, while H2D/D2H run on dedicated copy streams.
+  void enableEventGatedPipeline(ComputeHandle* computeHandle, InputBuffers* buffers);
+  bool eventPipelineInputHostReusable(ComputeHandle* computeHandle);
+  void prepareEventPipelineInput(
+    ComputeHandle* computeHandle,
+    InputBuffers* buffers,
+    int numBatchEltsFilled,
+    NNResultBuf** inputBufs
+  );
+  void launchEventPipelineInference(
+    ComputeHandle* computeHandle,
+    InputBuffers* buffers,
+    int numBatchEltsFilled
+  );
+  void enqueueEventPipelineOutput(
+    ComputeHandle* computeHandle,
+    InputBuffers* buffers,
+    int numBatchEltsFilled
+  );
+  bool eventPipelineOutputReady(ComputeHandle* computeHandle);
+  void finishEventPipelineOutput(
+    ComputeHandle* computeHandle,
+    InputBuffers* buffers,
+    int numBatchEltsFilled,
+    NNResultBuf** inputBufs,
+    std::vector<NNOutput*>& outputs
+  );
+#endif
 
-  //FOR TESTING -----------------------------------------------------------------------
-  //For all of the below, the input buffers must have exactly the size expected of the input for the operation.
-  //If useNHWC, assumes inputBuffer and outputBuffer are NHWC format, else assumes NCHW format.
+  // After getOutput, expose the raw per-head result arrays (logits before any postprocessing)
+  // for the most recent forward pass. Backends own the concrete InputBuffers layout, so they
+  // fill this struct.
+  void getRawNNOutputs(InputBuffers* buffers, RawNNOutputs& out);
 
-  //If the operation is implemented for testing, a backend should return true and evaluate the
-  //specific operation on the input buffer, resizing the output buffer and writing the result.
-  //If it is not implemented, backend should return false.
+  // Benchmark the pure device forward pass only. Host input arrays in `buffers` must already be
+  // populated (e.g. by one getOutput call). One-time H2D preparation is performed here before the
+  // timed loop; the loop repeatedly runs the backend forward on device without H2D/D2H copies or
+  // postprocessing, recording one GPU-visible elapsed time (seconds) per iteration into
+  // `iterationSeconds`. `timedWallStart` and `timedWallEnd` bound the same timed loop on the host,
+  // after warmup and before timing-event extraction/teardown. Returns false for backends that
+  // cannot run this pure-device benchmark.
+  bool benchmarkOutput(
+    ComputeHandle* computeHandle,
+    InputBuffers* buffers,
+    int batchSize,
+    int numWarmups,
+    int numIterations,
+    std::vector<double>& iterationSeconds,
+    BenchmarkForwardBarrier* phaseBarrier,
+    int serverThreadIdx,
+    int phaseOffsetMicros,
+    std::chrono::steady_clock::time_point& timedWallStart,
+    std::chrono::steady_clock::time_point& timedWallEnd
+  );
+
+  // FOR TESTING -----------------------------------------------------------------------
+  // For all of the below, the input buffers must have exactly the size expected of the input for the operation.
+  // If useNHWC, assumes inputBuffer and outputBuffer are NHWC format, else assumes NCHW format.
+
+  // If the operation is implemented for testing, a backend should return true and evaluate the
+  // specific operation on the input buffer, resizing the output buffer and writing the result.
+  // If it is not implemented, backend should return false.
 
   bool testEvaluateConv(
     const ConvLayerDesc* desc,
@@ -135,7 +252,7 @@ namespace NeuralNet {
     std::vector<float>& outputBuffer
   );
 
-  //Mask should be in 'NHW' format (no "C" channel).
+  // Mask should be in 'NHW' format (no "C" channel).
   bool testEvaluateBatchNorm(
     const BatchNormLayerDesc* desc,
     int batchSize,

@@ -1,0 +1,1418 @@
+{
+  "apply": {
+    "per_batch_tactic_overrides": {
+      "16": "cudaAffineSiluTacticSm120=half2,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed"
+    },
+    "topology": {
+      "cudaDeviceToUseThread0": 0,
+      "cudaDeviceToUseThread1": 0,
+      "cudaPersistingL2StreamsSm120": 2,
+      "cudaSm120Backend": true,
+      "numNNServerThreadsPerModel": 2
+    }
+  },
+  "batches": [
+    16
+  ],
+  "coverage": {
+    "dual_ffn": {
+      "16": {
+        "expected_count": 15,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 15,
+        "stable_long_count": 0
+      }
+    },
+    "fa4": {
+      "16": {
+        "expected_count": 14,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 14,
+        "stable_long_count": 0
+      }
+    },
+    "fused_residual": {
+      "16": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "head_bn": {
+      "16": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "initial_conv": {
+      "16": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "initial_global": {
+      "16": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "l2": {
+      "16": {
+        "expected_count": 11,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 11,
+        "stable_long_count": 0
+      }
+    },
+    "linear2": {
+      "16": {
+        "expected_count": 13,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 13,
+        "stable_long_count": 0
+      }
+    },
+    "outproj": {
+      "16": {
+        "expected_count": 9,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 9,
+        "stable_long_count": 0
+      }
+    },
+    "pointwise": {
+      "16": {
+        "expected_count": 5,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 5,
+        "stable_long_count": 0
+      }
+    },
+    "policy_p1": {
+      "16": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "postconv_bn": {
+      "16": {
+        "expected_count": 6,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 6,
+        "stable_long_count": 0
+      }
+    },
+    "preconv": {
+      "16": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "qkv_rope": {
+      "16": {
+        "expected_count": 26,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 26,
+        "stable_long_count": 0
+      }
+    },
+    "rmsnorm": {
+      "16": {
+        "expected_count": 5,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 5,
+        "stable_long_count": 0
+      }
+    },
+    "value_terminal": {
+      "16": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 1
+      }
+    },
+    "weight_sharing": {
+      "16": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "wide_head": {
+      "16": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "wide_projection": {
+      "16": {
+        "expected_count": 2,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 2,
+        "stable_long_count": 0
+      }
+    }
+  },
+  "families": {
+    "dual_ffn": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "a_fragment_reuse": false,
+            "activation_markers": [
+              "SM120 backend: fused FFN AOT active, tactic=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaFusedFFNAotTacticSm120": "dual_ffn-m128-n64-k32-s2-mb3-tanh-half2",
+              "cudaUseFusedFFN": true,
+              "cudaUseSwiGLU1152Sm120": false,
+              "cudaUseWideFFNSingleGemm": false
+            },
+            "generator": "historical_tilelang",
+            "history_family": "dual_ffn",
+            "id": "dual_ffn-m128-n64-k32-s2-mb3-tanh-half2",
+            "implementation": "historical_tilelang",
+            "k": 32,
+            "m": 128,
+            "min_blocks": 3,
+            "n": 64,
+            "overrides_keys": [
+              "cudaFusedFFNAotTacticSm120",
+              "cudaUseFusedFFN",
+              "cudaUseWideFFNSingleGemm"
+            ],
+            "requires_artifact": true,
+            "stages": 2,
+            "swiglu": "tanh_half2"
+          },
+          "candidate_id": "dual_ffn-m128-n64-k32-s2-mb3-tanh-half2",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2846.804921,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "historical_tilelang",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2846.804921
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "fa4": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "accumulation": "both16",
+            "activation_markers": [
+              "SM120 backend: FA4 AOT active, tactic=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaFlashAttentionAotTacticSm120": "fa4-b16-s361-h12-d32-tm128-tn64-s1-both16",
+              "cudaFlashAttentionSm120Accum": "both16",
+              "cudaUseFlashAttentionSm120": true
+            },
+            "exact_shape_aot": true,
+            "generator": "fa4_cute",
+            "head_dim": 32,
+            "heads": 12,
+            "history_family": "fa4",
+            "id": "fa4-b16-s361-h12-d32-tm128-tn64-s1-both16",
+            "implementation": "fa4_cute",
+            "num_stages": 1,
+            "requires_artifact": true,
+            "seq_len": 361,
+            "supports_packed": true,
+            "tile_m": 128,
+            "tile_n": 64
+          },
+          "candidate_id": "fa4-b16-s361-h12-d32-tm128-tn64-s1-both16",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2833.955022,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "fa4_cute",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2833.955022
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "fused_residual": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: GEMM beta residual fusion active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaUseFusedResidualGemmSm120": true
+            },
+            "history_family": "fused_residual",
+            "id": "fused_residual-on",
+            "implementation": "builtin"
+          },
+          "candidate_id": "fused_residual-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2835.447636,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2835.447636
+          ],
+          "overridden_keys": {
+            "cudaUseFusedResidualGemmSm120": "linear2"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "head_bn": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: head BN direct FP32 output active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaUseHeadBNHalfToFloat": true
+            },
+            "history_family": "head_bn",
+            "id": "head_bn-on",
+            "implementation": "builtin",
+            "overrides_keys": [
+              "cudaUseHeadBNHalfToFloat"
+            ]
+          },
+          "candidate_id": "head_bn-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2835.333099,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2835.333099
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "initial_conv": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: initial-conv frontend eng45/tile0/stages2 active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaInitialConvFrontendPlanSm120": "eng45-tile0-stages2"
+            },
+            "history_family": "initial_conv",
+            "id": "initial-conv-eng45-tile0-stages2",
+            "implementation": "cudnn_frontend"
+          },
+          "candidate_id": "initial-conv-eng45-tile0-stages2",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2838.350937,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "cudnn_frontend",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2838.350937
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "initial_global": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: fused global-feature matmul+broadcast add active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaUseInitialGlobalMatMulAdd": true
+            },
+            "history_family": "initial_global",
+            "id": "initial_global-on",
+            "implementation": "builtin"
+          },
+          "candidate_id": "initial_global-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2836.801016,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2836.801016
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "l2": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: persisting-L2 C768 trunk active",
+              "SM120 backend: persisting-L2 C384 inner active"
+            ],
+            "actual_grant_limited": true,
+            "batch": 16,
+            "config": {
+              "cudaPersistingL2HitRatioSm120": 1.0,
+              "cudaUsePersistingL2Inner": true,
+              "cudaUsePersistingL2Trunk": true
+            },
+            "history_family": "l2",
+            "hit_ratio": 1.0,
+            "id": "l2-trunk-inner-ratio-1p0",
+            "implementation": "builtin",
+            "inner": true,
+            "trunk": true
+          },
+          "candidate_id": "l2-trunk-inner-ratio-1p0",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2835.278779,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2835.278779
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "linear2": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: linear2 residual AOT active, tactic=linear2-m128-n128-k32-s3-cutlass"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaLinear2AotTacticSm120": "linear2-m128-n128-k32-s3-cutlass",
+              "cudaUseFusedResidual": true,
+              "cudaUseFusedResidualGemmSm120": true,
+              "cudaUseLinear2ResidualAot": true
+            },
+            "dynamic_smem_bytes": null,
+            "exact_batch_runtime": true,
+            "history_family": "linear2",
+            "id": "linear2-m128-n128-k32-s3-cutlass",
+            "implementation": "builtin_cutlass",
+            "k": 32,
+            "m": 128,
+            "min_blocks": 2,
+            "n": 128,
+            "overrides_keys": [
+              "cudaUseFusedResidualGemmSm120"
+            ],
+            "prelinked_artifact": false,
+            "stages": 3,
+            "threads": 128
+          },
+          "candidate_id": "linear2-m128-n128-k32-s3-cutlass",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2838.091181,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin_cutlass",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2838.091181
+          ],
+          "overridden_keys": {
+            "cudaUseFusedResidualGemmSm120": "outproj"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "outproj": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: out-projection residual AOT active, tactic=outproj-m128-n128-k32-s3-cutlass"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaOutProjectionAotTacticSm120": "outproj-m128-n128-k32-s3-cutlass",
+              "cudaUseFusedResidualGemmSm120": true,
+              "cudaUseOutProjectionResidualAot": true
+            },
+            "dynamic_smem_bytes": null,
+            "exact_batch_runtime": true,
+            "history_family": "outproj",
+            "id": "outproj-m128-n128-k32-s3-cutlass",
+            "implementation": "builtin_cutlass",
+            "k": 32,
+            "m": 128,
+            "min_blocks": 2,
+            "n": 128,
+            "overrides_keys": [
+              "cudaUseFusedResidualGemmSm120"
+            ],
+            "prelinked_artifact": false,
+            "stages": 3,
+            "threads": 128
+          },
+          "candidate_id": "outproj-m128-n128-k32-s3-cutlass",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2838.516071,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin_cutlass",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2838.516071
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "pointwise": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: half2 C384/C768 affine SiLU active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaAffineSiluTacticSm120": "half2"
+            },
+            "history_family": "pointwise",
+            "id": "pointwise-half2",
+            "implementation": "builtin"
+          },
+          "candidate_id": "pointwise-half2",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2838.580605,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2838.580605
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "policy_p1": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: fused 19x19 policy P1 active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaUseFusedPolicyP1": true
+            },
+            "history_family": "policy_p1",
+            "id": "policy_p1-on",
+            "implementation": "builtin",
+            "overrides_keys": [
+              "cudaUseFusedPolicyP1"
+            ]
+          },
+          "candidate_id": "policy_p1-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2836.05276,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2836.05276
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "postconv_bn": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: C384->C768 outer projection+residual CUTLASS active, tactic=warp64x32"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaOuterProjectionUpTacticSm120": "warp64x32",
+              "cudaUsePostConvBNSiluSm120": false
+            },
+            "history_family": "postconv_bn",
+            "id": "postconv-cutlass-warp64x32",
+            "implementation": "builtin_cutlass"
+          },
+          "candidate_id": "postconv-cutlass-warp64x32",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2847.824349,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin_cutlass",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2847.824349
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "preconv": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: C768->C384 outer projection CUTLASS active, tactic=warp64x32"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaOuterProjectionDownTacticSm120": "warp64x32"
+            },
+            "history_family": "preconv",
+            "id": "preconv-cutlass-warp64x32",
+            "implementation": "builtin_cutlass",
+            "overrides_keys": [
+              "cudaOuterProjectionDownTacticSm120"
+            ]
+          },
+          "candidate_id": "preconv-cutlass-warp64x32",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2852.047847,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin_cutlass",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2852.047847
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "qkv_rope": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: wide QKV AOT active, tactic=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed",
+              "SM120 backend: unrolled packed batch-shared fused Q/K RoPE active"
+            ],
+            "artifact_dependencies": [
+              {
+                "candidate_id": "wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed",
+                "family": "qkv_rope"
+              }
+            ],
+            "batch": 16,
+            "config": {
+              "cudaQKVRopeAotTacticSm120": "disabled",
+              "cudaUseBatchSharedRoPE": true,
+              "cudaUseBatchSharedRoPEUnrolledSm120": true,
+              "cudaUseFusedQKRoPE": true,
+              "cudaUseFusedQKRoPEHalf2Sm120": false,
+              "cudaUseQKVGemmAot": true,
+              "cudaUseQKVStridedSm120": false,
+              "cudaUseWideQKV": true,
+              "cudaWideQKVAotTacticSm120": "wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed"
+            },
+            "history_family": "qkv_rope",
+            "id": "qkv-rope-batch-shared-unrolled",
+            "implementation": "builtin_bundle",
+            "overrides_keys": [
+              "cudaQKVRopeAotTacticSm120",
+              "cudaUseBatchSharedRoPE",
+              "cudaUseBatchSharedRoPEUnrolledSm120",
+              "cudaUseFusedQKRoPE",
+              "cudaUseFusedQKRoPEHalf2Sm120",
+              "cudaUseQKVGemmAot",
+              "cudaUseQKVStridedSm120",
+              "cudaUseWideQKV",
+              "cudaWideQKVAotTacticSm120"
+            ],
+            "qkv_variant": "wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed",
+            "requires": {
+              "fa4.supports_packed": true
+            },
+            "rope_variant": "batch-shared-unrolled"
+          },
+          "candidate_id": "qkv-rope-batch-shared-unrolled",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2839.239474,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin_bundle",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2839.239474
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "rmsnorm": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: vec8 C384 RMSNorm active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaRMSNormTacticSm120": "warp4-vec8"
+            },
+            "history_family": "rmsnorm",
+            "id": "rmsnorm-vec8",
+            "implementation": "builtin"
+          },
+          "candidate_id": "rmsnorm-vec8",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2838.228074,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2838.228074
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "value_terminal": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "batch": 16,
+            "config": {
+              "cudaUseFusedValueTerminalSm120": false
+            },
+            "history_family": "value_terminal",
+            "id": "value_terminal-off",
+            "implementation": "fallback"
+          },
+          "candidate_id": "value_terminal-off",
+          "correctness": {
+            "candidate_sha256": "09a7a736cb8f4359648d1637b9eb84bb3e3b8b61bec2408117b4ca2b687a3a12",
+            "checks": {
+              "ownership_sigmoid_rmse": true,
+              "policy_probability_rmse": true,
+              "policy_top1": true,
+              "request_ownership_probability_abs": true,
+              "request_ownership_probability_rmse": true,
+              "request_policy_probability_abs": true,
+              "request_policy_probability_rmse": true,
+              "request_score_raw_abs": true,
+              "request_score_raw_rmse": true,
+              "request_value_probability_abs": true,
+              "request_value_probability_rmse": true,
+              "rows": true,
+              "score_mean_rmse": true,
+              "value_outcome_rmse": true,
+              "weighted_p0loss_delta": true
+            },
+            "comparison_sha256": "e5364fa1ad85b6d93d0a19702870e0512056dbcb02ff96e9f282b7e9cb23911d",
+            "kind": "8192-row all-head FP32-reference replay",
+            "metrics": {
+              "ownership_sigmoid_rmse": 0.00024764914996922016,
+              "policy_probability_rmse": 0.00010245190787827596,
+              "policy_top1_vs_reference": 0.9981689453125,
+              "request_gate": {
+                "ownershipProbability": {
+                  "maximumAbs": 0.00845426321029663,
+                  "maximumAbsIndex": 52,
+                  "maximumAbsRow": 4427,
+                  "maximumRmse": 0.001940280431881547,
+                  "maximumRmseRow": 8171
+                },
+                "policyProbability": {
+                  "maximumAbs": 0.009544670581817627,
+                  "maximumAbsIndex": 128,
+                  "maximumAbsRow": 1466,
+                  "maximumRmse": 0.0006885195034556091,
+                  "maximumRmseRow": 1466
+                },
+                "scoreRaw": {
+                  "maximumAbs": 0.30730485916137695,
+                  "maximumAbsIndex": 4,
+                  "maximumAbsRow": 1017,
+                  "maximumRmse": 0.13070480525493622,
+                  "maximumRmseRow": 3501
+                },
+                "valueProbability": {
+                  "maximumAbs": 0.055900394916534424,
+                  "maximumAbsIndex": 1,
+                  "maximumAbsRow": 5420,
+                  "maximumRmse": 0.045636579394340515,
+                  "maximumRmseRow": 5420
+                }
+              },
+              "score_mean_rmse": 0.0018692223820835352,
+              "value_outcome_rmse": 0.0021891710348427296,
+              "weighted_p0loss_delta": 2.193450927734375e-05
+            },
+            "reference_sha256": "25c48ec159696b78e7cd6406b1d587bf80f5cf8a1bbc60671a36b9567265cb60",
+            "status": "passed",
+            "thresholds": {
+              "maximum_ownership_sigmoid_rmse": 0.001,
+              "maximum_policy_probability_rmse": 0.001,
+              "maximum_request_ownership_probability_abs": 0.025,
+              "maximum_request_ownership_probability_rmse": 0.006,
+              "maximum_request_policy_probability_abs": 0.025,
+              "maximum_request_policy_probability_rmse": 0.002,
+              "maximum_request_score_raw_abs": 0.6,
+              "maximum_request_score_raw_rmse": 0.3,
+              "maximum_request_value_probability_abs": 0.06,
+              "maximum_request_value_probability_rmse": 0.05,
+              "maximum_score_mean_rmse": 0.01,
+              "maximum_value_outcome_rmse": 0.01,
+              "maximum_weighted_p0loss_delta": 0.001,
+              "minimum_policy_top1_vs_reference": 0.995,
+              "minimum_rows": 8192
+            }
+          },
+          "discovery_nn_evals_per_sec": 2836.2119329999996,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "fallback",
+          "measurement_iterations": 1000,
+          "measurement_kind": "long_stable",
+          "measurement_relative_spread": 0.0006296348940719081,
+          "measurement_sample_count": 2,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2835.319044,
+            2837.104822
+          ],
+          "overridden_keys": {},
+          "source_result": "long-gate-best-certified.json",
+          "stable_long_nn_evals_per_sec": 2836.2119329999996,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "weight_sharing": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: per-device model-weight sharing active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaShareModelWeights": true
+            },
+            "history_family": "weight_sharing",
+            "id": "weight_sharing-on",
+            "implementation": "builtin"
+          },
+          "candidate_id": "weight_sharing-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2834.651952,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2834.651952
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "wide_head": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "activation_markers": [
+              "SM120 backend: full C384 no-split wide head projection active"
+            ],
+            "batch": 16,
+            "config": {
+              "cudaUseFusedPolicyP1": true,
+              "cudaUseHeadBNHalfToFloat": true,
+              "cudaWideHeadProjectionTacticSm120": "full-c384"
+            },
+            "history_family": "wide_head",
+            "id": "wide-head-full-c384",
+            "implementation": "builtin_cutlass"
+          },
+          "candidate_id": "wide-head-full-c384",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2837.60186,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "builtin_cutlass",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2837.60186
+          ],
+          "overridden_keys": {
+            "cudaUseFusedPolicyP1": "policy_p1",
+            "cudaUseHeadBNHalfToFloat": "head_bn"
+          },
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    },
+    "wide_projection": {
+      "batches": {
+        "16": {
+          "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+          "candidate": {
+            "batch": 16,
+            "config": {},
+            "history_family": "wide_projection",
+            "id": "wide_projection-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "wide_projection-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 2836.76276,
+          "effective": true,
+          "history_accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "history_base_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 80,
+          "nn_evals_per_sec_samples": [
+            2836.76276
+          ],
+          "overridden_keys": {},
+          "source_result": "discovery.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "9dbccea2e0835b3fb6111c08ee090410a6eecbfe34f8340f8aa4c544394df186"
+    }
+  },
+  "final_joint": {
+    "16": {
+      "accumulated_overrides": "cudaAffineSiluTacticSm120=half2,cudaDisableWarmup=true,cudaFlashAttentionAotTacticSm120=fa4-b16-s361-h12-d32-tm128-tn64-s1-both16,cudaFlashAttentionSm120Accum=both16,cudaFusedFFNAotTacticSm120=dual_ffn-m128-n64-k32-s2-mb3-tanh-half2,cudaInitialConvFrontendPlanSm120=eng45-tile0-stages2,cudaLinear2AotTacticSm120=linear2-m128-n128-k32-s3-cutlass,cudaOutProjectionAotTacticSm120=outproj-m128-n128-k32-s3-cutlass,cudaOuterProjectionDownTacticSm120=warp64x32,cudaOuterProjectionUpTacticSm120=warp64x32,cudaPersistingL2HitRatioSm120=1,cudaQKVRopeAotTacticSm120=disabled,cudaRMSNormTacticSm120=warp4-vec8,cudaShareModelWeights=true,cudaUseBatchSharedRoPE=true,cudaUseBatchSharedRoPEUnrolledSm120=true,cudaUseFlashAttentionSm120=true,cudaUseFusedFFN=true,cudaUseFusedPolicyP1=true,cudaUseFusedQKRoPE=true,cudaUseFusedQKRoPEHalf2Sm120=false,cudaUseFusedResidual=true,cudaUseFusedResidualGemmSm120=true,cudaUseFusedValueTerminalSm120=false,cudaUseHeadBNHalfToFloat=true,cudaUseInitialGlobalMatMulAdd=true,cudaUseLinear2ResidualAot=true,cudaUseOutProjectionResidualAot=true,cudaUsePersistingL2Inner=true,cudaUsePersistingL2Trunk=true,cudaUsePostConvBNSiluSm120=false,cudaUseQKVGemmAot=true,cudaUseQKVStridedSm120=false,cudaUseSwiGLU1152Sm120=false,cudaUseWideFFNSingleGemm=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,cudaWideHeadProjectionTacticSm120=full-c384,cudaWideQKVAotTacticSm120=wide_qkv-m128-n128-k64-s2-cute-atom4x2-packed,nnMaxBatchSize=16",
+      "binary_sha256": "f3444f7b9c2a10efdce6ca768ccaa9caf784a2c87cf62461d2f3ae1fa2549423",
+      "candidate_id": "value_terminal-off",
+      "correctness": {
+        "candidate_sha256": "09a7a736cb8f4359648d1637b9eb84bb3e3b8b61bec2408117b4ca2b687a3a12",
+        "checks": {
+          "ownership_sigmoid_rmse": true,
+          "policy_probability_rmse": true,
+          "policy_top1": true,
+          "request_ownership_probability_abs": true,
+          "request_ownership_probability_rmse": true,
+          "request_policy_probability_abs": true,
+          "request_policy_probability_rmse": true,
+          "request_score_raw_abs": true,
+          "request_score_raw_rmse": true,
+          "request_value_probability_abs": true,
+          "request_value_probability_rmse": true,
+          "rows": true,
+          "score_mean_rmse": true,
+          "value_outcome_rmse": true,
+          "weighted_p0loss_delta": true
+        },
+        "comparison_sha256": "e5364fa1ad85b6d93d0a19702870e0512056dbcb02ff96e9f282b7e9cb23911d",
+        "kind": "8192-row all-head FP32-reference replay",
+        "metrics": {
+          "ownership_sigmoid_rmse": 0.00024764914996922016,
+          "policy_probability_rmse": 0.00010245190787827596,
+          "policy_top1_vs_reference": 0.9981689453125,
+          "request_gate": {
+            "ownershipProbability": {
+              "maximumAbs": 0.00845426321029663,
+              "maximumAbsIndex": 52,
+              "maximumAbsRow": 4427,
+              "maximumRmse": 0.001940280431881547,
+              "maximumRmseRow": 8171
+            },
+            "policyProbability": {
+              "maximumAbs": 0.009544670581817627,
+              "maximumAbsIndex": 128,
+              "maximumAbsRow": 1466,
+              "maximumRmse": 0.0006885195034556091,
+              "maximumRmseRow": 1466
+            },
+            "scoreRaw": {
+              "maximumAbs": 0.30730485916137695,
+              "maximumAbsIndex": 4,
+              "maximumAbsRow": 1017,
+              "maximumRmse": 0.13070480525493622,
+              "maximumRmseRow": 3501
+            },
+            "valueProbability": {
+              "maximumAbs": 0.055900394916534424,
+              "maximumAbsIndex": 1,
+              "maximumAbsRow": 5420,
+              "maximumRmse": 0.045636579394340515,
+              "maximumRmseRow": 5420
+            }
+          },
+          "score_mean_rmse": 0.0018692223820835352,
+          "value_outcome_rmse": 0.0021891710348427296,
+          "weighted_p0loss_delta": 2.193450927734375e-05
+        },
+        "reference_sha256": "25c48ec159696b78e7cd6406b1d587bf80f5cf8a1bbc60671a36b9567265cb60",
+        "status": "passed",
+        "thresholds": {
+          "maximum_ownership_sigmoid_rmse": 0.001,
+          "maximum_policy_probability_rmse": 0.001,
+          "maximum_request_ownership_probability_abs": 0.025,
+          "maximum_request_ownership_probability_rmse": 0.006,
+          "maximum_request_policy_probability_abs": 0.025,
+          "maximum_request_policy_probability_rmse": 0.002,
+          "maximum_request_score_raw_abs": 0.6,
+          "maximum_request_score_raw_rmse": 0.3,
+          "maximum_request_value_probability_abs": 0.06,
+          "maximum_request_value_probability_rmse": 0.05,
+          "maximum_score_mean_rmse": 0.01,
+          "maximum_value_outcome_rmse": 0.01,
+          "maximum_weighted_p0loss_delta": 0.001,
+          "minimum_policy_top1_vs_reference": 0.995,
+          "minimum_rows": 8192
+        }
+      },
+      "family": "value_terminal",
+      "measurement_iterations": 1000,
+      "measurement_kind": "long_stable",
+      "measurement_relative_spread": 0.0006296348940719081,
+      "measurement_sample_count": 2,
+      "measurement_warmup": 80,
+      "nn_evals_per_sec_samples": [
+        2835.319044,
+        2837.104822
+      ],
+      "source_result": "long-gate-best-certified.json",
+      "stable_long_nn_evals_per_sec": 2836.2119329999996
+    }
+  },
+  "generated_utc": "2026-08-11T05:11:30.610370+00:00",
+  "identity_missing": [],
+  "kind": "cuda-tactic-plan",
+  "missing": [],
+  "plan_id": "sm120-rtx5080-96c8d332dc452f3d",
+  "plan_sha256": "96c8d332dc452f3d016f1bfe62513eaafb387d00fd9b33a1fd5d715a4058a6d1",
+  "positive_history_closure": {
+    "architecture": "sm120",
+    "complete": true,
+    "contract_sha256": "284fd62b15fb96db026a61220cc8b37ef9e71f337b9fee168deb6cf1b95f37ee",
+    "links": [
+      "backend",
+      "scan_candidate",
+      "activation",
+      "plan_apply"
+    ],
+    "record_count": 63,
+    "record_ids": [
+      "sm120-stage-qkv-strided",
+      "sm120-stage-wide-qkv-tilelang",
+      "sm120-stage-wide-qkv-lower-smem",
+      "sm120-stage-wide-qkv-atom2x2",
+      "sm120-stage-wide-qkv-atom4x2",
+      "sm120-stage-wide-ffn",
+      "sm120-combined-s1-projections",
+      "sm120-stage-residual-beta1",
+      "sm120-stage-rms-ordered-ept3",
+      "sm120-stage-rms-one-warp",
+      "sm120-stage-rms-vec8",
+      "sm120-stage-fused-qk-rope",
+      "sm120-stage-rope-half2",
+      "sm120-stage-rope-batch-shared",
+      "sm120-stage-rope-unrolled",
+      "sm120-stage55-packed-qkv-rope",
+      "sm120-fa4-n64-fp32",
+      "sm120-fa4-n64-qk16",
+      "sm120-fa4-n64-pv16",
+      "sm120-fa4-n64-both16",
+      "sm120-stage57-fa4-n96",
+      "sm120-fa4-n128-fp32",
+      "sm120-fa4-n128-qk16",
+      "sm120-fa4-n128-pv16",
+      "sm120-fa4-n128-both16",
+      "sm120-stage-dual-ffn-tilelang",
+      "sm120-stage20-dual-ffn-cutlass-shared-a",
+      "sm120-stage20-dual-ffn-exp",
+      "sm120-stage33b-dual-ffn-areuse",
+      "sm120-stage-dual-ffn-three-stage",
+      "sm120-stage47-dual-ffn-cute-grid340",
+      "sm120-stage-linear2",
+      "sm120-stage22-linear2-m128n128-s2",
+      "sm120-stage22-linear2-m128n128-s3-t128",
+      "sm120-stage22-linear2-m128n128-s3-t256",
+      "sm120-stage22-linear2-m128n128-s4",
+      "sm120-stage22-linear2-m128n128-k64-s2",
+      "sm120-stage22-linear2-m128n64-s3",
+      "sm120-stage22-linear2-m64n128-s3",
+      "sm120-stage-linear2-m128n96-s4",
+      "sm120-stage-outproj",
+      "sm120-stage22-outproj-m128n128-s3",
+      "sm120-stage22-outproj-m128n128-s4",
+      "sm120-stage22-outproj-m128n128-k64-s2",
+      "sm120-stage22-outproj-m128n64-s3",
+      "sm120-stage22-outproj-m64n128-s3",
+      "sm120-stage-swiglu",
+      "sm120-stage93-outer-projection-bundle",
+      "sm120-stage-postconv-warp64x32",
+      "sm120-stage45-postconv-bn-silu",
+      "sm120-stage-pointwise-half2",
+      "sm120-stage-pointwise-half2x3",
+      "sm120-stage-pointwise-flat-vec8",
+      "sm120-stage-l2-trunk",
+      "sm120-stage-l2-trunk-inner",
+      "sm120-stage-weight-sharing",
+      "sm120-stage-initial-conv-eng45",
+      "sm120-stage52-initial-conv-eng47",
+      "sm120-stage-initial-global",
+      "sm120-stage-policy-p1",
+      "sm120-stage-wide-head",
+      "sm120-stage53-partial-wide-head",
+      "sm120-stage-head-bn"
+    ],
+    "validated_batches": [
+      16
+    ]
+  },
+  "production_ready": true,
+  "ready_for_scan_bypass": true,
+  "reproducibility": {
+    "notes": [
+      "Full commands and environment snapshots remain in the content-addressed scan results, not in this runtime plan.",
+      "The receiving device must match architecture/GPU class and stream topology; producer device ordinal may change."
+    ]
+  },
+  "schema": 1,
+  "selection": {
+    "maximum_relative_spread": 0.1,
+    "method": "history-ordered accumulated coordinate winners; final joint long-stable row",
+    "metric": "stable long natural whole-graph combined nnEval/s",
+    "minimum_iterations": 1000,
+    "minimum_samples": 2,
+    "short_scan_values_are_never_final": true
+  },
+  "source_results": [
+    {
+      "family": "",
+      "finished_utc": "2026-08-10T14:52:12.035868+00:00",
+      "name": "discovery.json",
+      "rows": 136,
+      "sha256": "e4e80911d2adefacc5fb88842ac174e396178daefef0b3c7593d0e209f2b9358"
+    },
+    {
+      "family": null,
+      "finished_utc": "2026-08-11T05:11:30.554188+00:00",
+      "name": "long-gate-best-certified.json",
+      "rows": 1,
+      "sha256": "e82d7c25a6b4d8ea88d6e19a5a15c1e95cd78e71d384297c3b336ea54c4a30bb"
+    }
+  ],
+  "status": "complete_long_stable",
+  "target": {
+    "architecture": "sm120",
+    "compute_capability": [
+      12,
+      0
+    ],
+    "config_sha256": "23bae0f1b5315ccdc3d7c05c4f65c54789a10f5811b91cf02a38704a938d30eb",
+    "cuda_device_capabilities_at_scan": [
+      {
+        "asyncEngineCount": 2,
+        "clockRateKhz": 2655000,
+        "computeCapabilityMajor": 12,
+        "computeCapabilityMinor": 0,
+        "concurrentKernels": true,
+        "l2CacheSize": 67108864,
+        "maxThreadsPerBlock": 1024,
+        "maxThreadsPerMultiProcessor": 1536,
+        "memoryBusWidth": 256,
+        "memoryClockRateKhz": 15001000,
+        "multiProcessorCount": 84,
+        "name": "NVIDIA GeForce RTX 5080",
+        "ordinal": 0,
+        "regsPerMultiprocessor": 65536,
+        "sharedMemPerBlockOptin": 101376,
+        "sharedMemPerMultiprocessor": 102400,
+        "totalGlobalMem": 16611278848,
+        "warpSize": 32
+      }
+    ],
+    "device_ordinal_at_scan": 0,
+    "device_ordinals_at_scan": [
+      0
+    ],
+    "fixed_board": [
+      19,
+      19
+    ],
+    "gpu_class": "rtx5080",
+    "model_sha256": "1881600caab9e9d85a3dd6a019e9b8e7d2c237b5f984e13ed49a8645be3077c6",
+    "precision": "FP16/NHWC",
+    "streams": 2
+  }
+}

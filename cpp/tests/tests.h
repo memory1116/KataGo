@@ -29,6 +29,9 @@ namespace Tests {
   //testrules.cpp
   void runRulesTests();
 
+  //testpassalivesuicide.cpp
+  void runPassAliveSuicideModeTests();
+
   //testscore.cpp
   void runScoreTests();
 
@@ -46,6 +49,7 @@ namespace Tests {
 
   //testsearchnonn.cpp
   void runNNLessSearchTests();
+  void runNNBatchingDispatcherTests();
   //testsearch.cpp
   void runSearchTests(const std::string& modelFile, bool inputsNHWC, bool cudaNHWC, int symmetry, bool useFP16);
   //testsearchv3.cpp
@@ -60,12 +64,22 @@ namespace Tests {
   void runNNSymmetries(const std::string& modelFile, bool inputsNHWC, bool cudaNHWC, bool useFP16);
   void runNNOnManyPoses(const std::string& modelFile, bool inputsNHWC, bool cudaNHWC, int symmetry, bool useFP16, const std::string& comparisonFile);
   void runNNBatchingTest(const std::string& modelFile, bool inputsNHWC, bool cudaNHWC, bool useFP16);
+  void runNNGTPRequestStress(
+    NNEvaluator* nnEval,
+    const std::string& corpusFile,
+    const std::string& referenceFile,
+    int numRequests,
+    int numPasses,
+    int numRequestThreads,
+    int numVerifyThreads
+  );
 
   //testtime.cpp
   void runTimeControlsTests();
 
   //testtrainingwrite.cpp
   void runTrainingWriteTests();
+  void runPassAliveSuicideGameTests();
   void runSelfplayInitTestsWithNN(const std::string& modelFile);
   void runSekiTrainWriteTests(const std::string& modelFile);
   void runMoreSelfplayTestsWithNN(const std::string& modelFile);
@@ -103,6 +117,7 @@ namespace Tests {
   void runInlineConfigTests();
   void runConfigTests(const std::vector<std::string>& args);
   void runParseAllConfigsTest();
+  void runTaskParsingTests();
 
   //testmisc.cpp
   void runCollectFilesTests();
