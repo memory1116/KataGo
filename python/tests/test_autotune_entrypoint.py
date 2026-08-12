@@ -26,6 +26,69 @@ BUILD_FOR_PLAN_SPEC.loader.exec_module(BUILD_FOR_PLAN)
 
 
 class AutotuneEntrypointTests(unittest.TestCase):
+    def test_sm86_is_a_first_class_workflow_with_production_defaults(self) -> None:
+        detected = AUTOTUNE.classify_device({
+            "compute_capability": [8, 6],
+            "name": "NVIDIA GeForce RTX 3080 Ti",
+        })
+        self.assertEqual(detected, {
+            "workflow": "sm86", "gpu_class": "rtx3080ti",
+        })
+        self.assertEqual(AUTOTUNE.DEFAULT_MIN_IMPROVEMENT_FRACTION, 0.005)
+        self.assertEqual(AUTOTUNE.MIN_REFINEMENT_CONFIRMATION_ITERATIONS, 500)
+        self.assertEqual(AUTOTUNE.MIN_GATE_REPEATS, 4)
+        source = AUTOTUNE_PATH.read_text()
+        self.assertIn("def sm8x_prepare(", source)
+        self.assertIn("hardware[\"workflow\"] in SM8X_WORKFLOWS", source)
+        self.assertNotIn('"--min-improvement-fraction", "0.001"', source)
+        prepare = (
+            AUTOTUNE_PATH.parents[2] / "python" /
+            "portable_prepare_tilelang_fat_scan.py"
+        ).read_text()
+        generator = (
+            AUTOTUNE_PATH.parents[2] / "python" /
+            "portable_generate_tilelang_aot.py"
+        ).read_text()
+        cmake = (AUTOTUNE_PATH.parents[2] / "cpp/CMakeLists.txt").read_text()
+        sm8x_backend = (
+            AUTOTUNE_PATH.parents[2] / "cpp/neuralnet/cudabackend_sm89.cpp"
+        ).read_text()
+        sm8x_flash = (
+            AUTOTUNE_PATH.parents[2] / "cpp/neuralnet/cudabackend_sm89_flash.cu"
+        ).read_text()
+        sm8x_dual = (
+            AUTOTUNE_PATH.parents[2] / "cpp/neuralnet/cudabackend_sm89_dual_gemm.cu"
+        ).read_text()
+        sm8x_linear2 = (
+            AUTOTUNE_PATH.parents[2] / "cpp/neuralnet/cudabackend_sm89_linear2_gemm.cu"
+        ).read_text()
+        self.assertIn("nvcc_arch_flag(space.get", prepare)
+        self.assertNotIn('"-arch=sm_89"', prepare)
+        self.assertIn('"--nvcc", args.nvcc', prepare)
+        self.assertIn("cuda_architecture_guard(compute_capability)", generator)
+        self.assertIn("[nvcc_path, \"--version\"]", generator)
+        self.assertNotIn('["nvcc", "--version"]', generator)
+        self.assertNotIn("only generates sm89", generator)
+        self.assertEqual(
+            cmake.count(
+                "CUDA_ARCHITECTURES ${KATAGO_SM8X_CUDA_ARCHITECTURES}"
+            ),
+            2,
+        )
+        self.assertNotIn("CUDA_ARCHITECTURES 89 CUDA_STANDARD 17", cmake)
+        self.assertIn(
+            'set(CMAKE_CUDA_ARCHITECTURES "${KATAGO_CUDA_ARCHITECTURES}" CACHE STRING',
+            cmake,
+        )
+        self.assertIn(
+            "KATAGO_SM8X_COMPILED_ARCH=${KATAGO_SM8X_CUDA_ARCHITECTURES}",
+            cmake,
+        )
+        self.assertIn("minorComputeCapability == 6", sm8x_backend)
+        self.assertIn("p.arch = KATAGO_SM8X_COMPILED_ARCH", sm8x_flash)
+        self.assertIn("initializedTokens != tokens", sm8x_dual)
+        self.assertIn("initializedTokens != tokens", sm8x_linear2)
+
     def test_direct_clone_exposes_working_root_entrypoints(self) -> None:
         repo = AUTOTUNE_PATH.parents[2]
         setup = repo / "setup.sh"

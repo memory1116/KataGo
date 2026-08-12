@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified SM89/SM120 exact-batch tactic scanning and plan generation.
+"""Unified SM86/SM89/SM120 exact-batch tactic scanning and plan generation.
 
 This file deliberately lives outside the CUDA runtime. It is the only
 optimization workflow boundary maintained by final-migration:
@@ -38,6 +38,7 @@ import signal
 import shlex
 import shutil
 import statistics
+import struct
 import subprocess
 import sys
 import tempfile
@@ -57,7 +58,15 @@ SPACE_KIND = "cuda-tactic-search-space"
 PLAN_KIND = "cuda-tactic-plan"
 RESULT_KIND = "cuda-tactic-scan"
 ARTIFACT_BUNDLE_KIND = "cuda-tactic-artifact-bundle"
+LINKED_AOT_REPLAY_KIND = "e022-linked-aot-replaynn"
 BASELINE_SCAN_KIND = "cuda-stable-optimized-batch-prescan"
+PLAN_RUNTIME_CONFIG_KEYS = (
+    "cudaUseFP16",
+    "cudaUseGraphInference",
+    "cudaUseNHWC",
+    "cudaWarmupOnlyMaxBatchSize",
+    "nnBatchAwareDispatch",
+)
 SM_CONFLICT_RETRY_SECONDS = 30.0
 # A family is an implementation catalog. A decision group is the actual
 # ordered coordinate: every runtime dependency/overlap stays inside one group,
@@ -103,12 +112,16 @@ SM120_FAMILIES = tuple(
 # or RoPE bundle.
 EXPECTED_CROSS_FAMILY_OWNERS = {
     "sm89": {
+        "cudaDualFfnCutlassTacticSm89": ("wide_projection", "dual_ffn"),
+        "cudaFusedFFNAotTacticSm89": ("wide_projection", "dual_ffn"),
         "cudaPolicyP1RowsPerBlockSm89": ("wide_head", "policy_p1"),
         "cudaUseFusedResidual": ("fused_residual", "linear2", "outproj"),
         "cudaUseHeadBNHalfToFloat": ("wide_head", "head_bn"),
         "cudaUseInitialGlobalMatMulAdd": ("wide_head", "initial_global"),
         "cudaUseLinear2PostBNSiluSm89": ("linear2", "pointwise"),
         "cudaUsePostConvBNSiluSm89": ("postconv_bn", "pointwise"),
+        "cudaUseQKVRoPEGemmSm89": ("wide_projection", "qkv_rope"),
+        "cudaUseSplitQKVRoPEGemmSm89": ("wide_projection", "qkv_rope"),
         "cudaUseWideFFN": ("wide_projection", "dual_ffn"),
         "cudaUseWideHeadProjection": ("wide_head", "policy_p1"),
         "cudaUseWideQKV": ("wide_projection", "qkv_rope"),
@@ -144,6 +157,12 @@ EXPECTED_CROSS_FAMILY_OWNERS = {
         ),
     },
 }
+# SM86 uses the same portable SM89-named runtime config namespace and family
+# ownership graph, but it is a distinct execution/performance class.  Keep a
+# separate architecture identity instead of lying that an RTX 3080 Ti is SM89.
+EXPECTED_CROSS_FAMILY_OWNERS["sm86"] = dict(
+    EXPECTED_CROSS_FAMILY_OWNERS["sm89"]
+)
 ALL_FAMILIES = tuple(dict.fromkeys((*SM89_FAMILIES, *SM120_FAMILIES)))
 SM89_RUNTIME_CONFIG_KEYS = frozenset({
     "cudaFusedFFNAotTacticSm89",
@@ -300,13 +319,35 @@ if set(SM89_RUNTIME_BASELINE) != set(SM89_RUNTIME_CONFIG_KEYS):
 if set(SM120_RUNTIME_BASELINE) != set(SM120_RUNTIME_CONFIG_KEYS):
     raise RuntimeError("SM120 runtime baseline does not cover its config-key contract")
 MIN_LONG_ITERATIONS = 1000
+# Schema-1 plans in the repository used two repeats and a 10% configured
+# spread cap. Keep reading them for reproducibility, while every newly produced
+# or bypass-eligible plan must satisfy the stricter production constants.
 MIN_STABLE_SAMPLES = 2
+MIN_PRODUCTION_STABLE_SAMPLES = 4
 MIN_DISCOVERY_ITERATIONS = 100
 MIN_DISCOVERY_WARMUP = 50
-DEFAULT_MAX_RELATIVE_SPREAD = 0.10
-DEFAULT_MIN_DISCOVERY_IMPROVEMENT_FRACTION = 0.001
+MIN_CONFIRMATION_PAIRS = 4
+DEFAULT_CONFIRMATION_ITERATIONS = 500
+DEFAULT_MAX_RELATIVE_SPREAD = 0.02
+LEGACY_MAX_RELATIVE_SPREAD = 0.10
+DEFAULT_MIN_DISCOVERY_IMPROVEMENT_FRACTION = 0.005
+CONFIRMATION_CONFIDENCE_LEVEL = 0.95
+# ABBA followed by BAAB balances which candidate runs first and last.  When
+# samples are appended by label, zipping the incumbent and challenger lists
+# forms four adjacent-in-time pairs: (0,1), (3,2), (5,4), and (6,7).
+CONFIRMATION_ORDER = (
+    "incumbent", "challenger", "challenger", "incumbent",
+    "challenger", "incumbent", "incumbent", "challenger",
+)
 
 ARCHITECTURES: dict[str, dict[str, Any]] = {
+    "sm86": {
+        "compute_capability": [8, 6],
+        "gpu_classes": ("rtx3080ti", "rtx3090", "sm86"),
+        "precision": "FP16/NHWC",
+        "families": SM89_FAMILIES,
+        "tactic_catalog": "portable_sm89_config_namespace",
+    },
     "sm89": {
         "compute_capability": [8, 9],
         "gpu_classes": ("rtx4090", "rtx4080", "sm89"),
@@ -320,6 +361,7 @@ ARCHITECTURES: dict[str, dict[str, Any]] = {
         "families": SM120_FAMILIES,
     },
 }
+SM89_CATALOG_ARCHITECTURES = frozenset(("sm86", "sm89"))
 GPU_CLASS_ARCH = {
     gpu_class: architecture
     for architecture, value in ARCHITECTURES.items()
@@ -440,6 +482,20 @@ def nvcc_arch_flag(compute_capability: object) -> str:
     return f"-arch=sm_{major}{minor}"
 
 
+def cuda_architecture_guard(compute_capability: object) -> str:
+    """Return the exact-family device-code guard for one CUDA capability."""
+    # Reuse the public validator so command-line and generated-source identity
+    # cannot disagree on the spelling or shape of a compute capability.
+    nvcc_arch_flag(compute_capability)
+    assert isinstance(compute_capability, list)
+    major, minor = compute_capability
+    encoded = major * 100 + minor * 10
+    return (
+        f"__CUDA_ARCH__ >= {encoded} && "
+        f"__CUDA_ARCH__ < {encoded + 10}"
+    )
+
+
 def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
@@ -533,6 +589,40 @@ def config_string(values: dict[str, object]) -> str:
     return ",".join(f"{key}={config_value(values[key])}" for key in sorted(values))
 
 
+def plan_runtime_config_from_final_joint(
+    final_joint: dict[str, object], batches: Sequence[int],
+) -> dict[str, bool]:
+    """Extract the common non-tactic execution contract that was certified."""
+    common: dict[str, bool] | None = None
+    for batch in sorted(set(int(item) for item in batches)):
+        entry = final_joint.get(str(batch))
+        if not isinstance(entry, dict):
+            raise ValueError(f"plan has no final joint B{batch} runtime contract")
+        accumulated = entry.get("accumulated_overrides")
+        if not isinstance(accumulated, str):
+            raise ValueError(
+                f"plan final joint B{batch} has no accumulated runtime overrides"
+            )
+        values = parse_key_values(accumulated)
+        current: dict[str, bool] = {}
+        for key in PLAN_RUNTIME_CONFIG_KEYS:
+            value = values.get(key)
+            if value not in ("true", "false"):
+                raise ValueError(
+                    f"plan final joint B{batch} requires boolean {key}"
+                )
+            current[key] = value == "true"
+        if common is None:
+            common = current
+        elif current != common:
+            raise ValueError(
+                "plan final joint batches have different runtime execution contracts"
+            )
+    if common is None:
+        raise ValueError("plan has no batches for a runtime execution contract")
+    return common
+
+
 def canonical_architecture(architecture: str | None, gpu_class: str | None) -> str:
     if architecture:
         architecture = architecture.lower()
@@ -562,7 +652,7 @@ def architecture_families(architecture: str) -> tuple[str, ...]:
 def architecture_decision_groups(
     architecture: str,
 ) -> tuple[tuple[str, ...], ...]:
-    if architecture == "sm89":
+    if architecture in SM89_CATALOG_ARCHITECTURES:
         groups = SM89_DECISION_GROUPS
     elif architecture == "sm120":
         groups = SM120_DECISION_GROUPS
@@ -576,7 +666,7 @@ def architecture_decision_groups(
 
 
 def runtime_tactic_baseline(architecture: str) -> dict[str, object]:
-    if architecture == "sm89":
+    if architecture in SM89_CATALOG_ARCHITECTURES:
         return dict(SM89_RUNTIME_BASELINE)
     if architecture == "sm120":
         return dict(SM120_RUNTIME_BASELINE)
@@ -791,6 +881,17 @@ def _history_candidates(architecture: str, family: str, batch: int) -> list[dict
                 family, batch, "wide-projection-off",
                 cudaUseWideQKV=False,
                 cudaUseWideFFN=False,
+                # The accepted SM86 history graph may already select the
+                # QKV+RoPE GEMM and dual-FFN CUTLASS consumers. Disabling
+                # their wide storage producers without disabling the
+                # consumers produces a deliberately fail-closed but
+                # unmeasurable control. Keep the off coordinate internally
+                # valid so it remains a real comparison against the accepted
+                # graph rather than a subprocess crash.
+                cudaUseQKVRoPEGemmSm89=False,
+                cudaUseSplitQKVRoPEGemmSm89=False,
+                cudaDualFfnCutlassTacticSm89="disabled",
+                cudaFusedFFNAotTacticSm89="disabled",
             ),
             _config_candidate(
                 family, batch, "wide-projection-both",
@@ -1096,8 +1197,16 @@ def _sm89_candidates(family: str, batch: int) -> list[dict[str, object]]:
         # ownership explicit so plan construction cannot silently depend on
         # dict update order.
         partial_overrides = {
-            "qkv_rope": {"cudaUseWideQKV"},
-            "dual_ffn": {"cudaUseWideFFN"},
+            "qkv_rope": {
+                "cudaUseQKVRoPEGemmSm89",
+                "cudaUseSplitQKVRoPEGemmSm89",
+                "cudaUseWideQKV",
+            },
+            "dual_ffn": {
+                "cudaDualFfnCutlassTacticSm89",
+                "cudaFusedFFNAotTacticSm89",
+                "cudaUseWideFFN",
+            },
             "linear2": {
                 "cudaUseFusedResidual",
             },
@@ -2043,7 +2152,7 @@ def _sm120_candidates(
 def default_candidates(
     architecture: str, family: str, batch: int, gpu_class: str,
 ) -> list[dict[str, object]]:
-    if architecture == "sm89":
+    if architecture in SM89_CATALOG_ARCHITECTURES:
         return _sm89_candidates(family, batch)
     if architecture == "sm120":
         return _sm120_candidates(family, batch, gpu_class)
@@ -2061,6 +2170,24 @@ def positive_history_seed_candidate_ids(
     serialized through the normal plan-apply mapping.  Exact-batch IDs are
     materialized for every requested batch; there is no privileged B19 launch.
     """
+    if architecture == "sm86" and gpu_class == "rtx3080ti":
+        # Reconstructed only from this task's validated SM86 sequence:
+        # E003 (wide projections, dual FFN, QKV+RoPE), E006 (post-conv
+        # BN+SiLU), and E014 (both16 Flash T5).  Do not import 4090 winners as
+        # if their performance evidence applied to the RTX 3080 Ti.
+        return {
+            "wide_projection": "wide-projection-both",
+            "qkv_rope": "qkv-rope-gemm-epilogue",
+            "dual_ffn": (
+                "dual-cutlass-m128-n64-k32-w64-n32-s3-sw4-exp"
+            ),
+            "fused_residual": "fused_residual-on",
+            "postconv_bn": (
+                "postconv-cutlass-m128-n128-k32-w64-n64-s3-sw1-bn-silu"
+            ),
+            "rmsnorm": "rmsnorm-warps4",
+            "fa4": "fa4-d32-m64-n96-w4-pack0-both16",
+        }
     if architecture == "sm89" and gpu_class == "rtx4090":
         return {
             "fa4": "fa4-d32-m64-n96-w4-pack0-both16",
@@ -2130,7 +2257,10 @@ def stable_prescan_candidate_ids(
     backend.  It is explicit, fail-closed, and substantially closer to the
     eventual optimized graph than disabling the custom backend altogether.
     """
-    if architecture == "sm89" and gpu_class == "rtx4090":
+    if (
+        (architecture == "sm86" and gpu_class == "rtx3080ti") or
+        (architecture == "sm89" and gpu_class == "rtx4090")
+    ):
         # Every selected implementation is batch-generic on SM89, so the
         # certified B12 graph itself is a valid B4-B32 ranking baseline.
         return positive_history_seed_candidate_ids(
@@ -2211,6 +2341,137 @@ def load_candidate_files(paths: Sequence[str]) -> list[dict[str, object]]:
     return result
 
 
+SM86_POSITIVE_HISTORY = (
+    {
+        "history_id": "sm86-e003-wide-projection-bundle",
+        "family": "wide_projection",
+        "candidate_id": "wide-projection-both",
+        "evidence": "E003 SM86 strict-search retained wide QKV and wide FFN",
+        "backend_file": "cpp/neuralnet/cudabackend_sm89_forward.cpp",
+        "backend_symbols": ("useWideQKV_", "useWideFFN_"),
+    },
+    {
+        "history_id": "sm86-e003-qkv-rope-gemm",
+        "family": "qkv_rope",
+        "candidate_id": "qkv-rope-gemm-epilogue",
+        "evidence": "E003 fused QKV plus RoPE strict-search gain",
+        "backend_file": "cpp/neuralnet/cudabackend_sm89_qkv_rope_gemm.cu",
+        "backend_symbols": ("Sm89QKVRoPEGemm",),
+    },
+    {
+        "history_id": "sm86-e003-dual-ffn-sw4",
+        "family": "dual_ffn",
+        "candidate_id": "dual-cutlass-m128-n64-k32-w64-n32-s3-sw4-exp",
+        "evidence": "E003 dual FFN strict-search gain",
+        "backend_file": "cpp/neuralnet/cudabackend_sm89_dual_gemm.cu",
+        "backend_symbols": ("m128-n64-k32-w64-n32-s3-sw4-exp",),
+    },
+    {
+        "history_id": "sm86-e003-fused-residual",
+        "family": "fused_residual",
+        "candidate_id": "fused_residual-on",
+        "evidence": "SM86 retained fused residual boundary",
+        "backend_file": "cpp/neuralnet/cudabackend_sm89_forward.cpp",
+        "backend_symbols": ("useFusedResidual",),
+    },
+    {
+        "history_id": "sm86-e006-postconv-bn-silu",
+        "family": "postconv_bn",
+        "candidate_id": (
+            "postconv-cutlass-m128-n128-k32-w64-n64-s3-sw1-bn-silu"
+        ),
+        "evidence": "E006 SM86 strict-search +1.27% and correctness pass",
+        "backend_file": "cpp/neuralnet/cudabackend_sm89_linear2_gemm.cu",
+        "backend_symbols": ("Sm89PostConvBnGemm",),
+    },
+    {
+        "history_id": "sm86-rmsnorm-warps4",
+        "family": "rmsnorm",
+        "candidate_id": "rmsnorm-warps4",
+        "evidence": "SM86 retained RMSNorm four-row kernel",
+        "backend_file": "cpp/neuralnet/cudabackend_sm89_kernels.cu",
+        "backend_symbols": ("sm89RMSNormNHWCHalfKernel<4>",),
+    },
+    {
+        "history_id": "sm86-e014-flash-t5-both16",
+        "family": "fa4",
+        "candidate_id": "fa4-d32-m64-n96-w4-pack0-both16",
+        "evidence": "E014 SM86 strict-search +16.36% and correctness pass",
+        "backend_file": "cpp/neuralnet/cudabackend_sm89_flash.cu",
+        "backend_symbols": (
+            "launchFlashTactic<64,96,false,cutlass::half_t>",
+        ),
+    },
+)
+
+
+def validate_sm86_positive_history_closure(
+    repo: pathlib.Path,
+    batches: dict[int, dict[str, list[dict[str, object]]]],
+    runtime_keys: set[str] | frozenset[str],
+) -> dict[str, object]:
+    """Bind only the SM86 routes measured in this audit, never 4090 history."""
+    for record in SM86_POSITIVE_HISTORY:
+        history_id = str(record["history_id"])
+        source = repo / str(record["backend_file"])
+        source_text = source.read_text(errors="replace") if source.is_file() else ""
+        missing_symbols = [
+            str(symbol) for symbol in record["backend_symbols"]
+            if str(symbol) not in source_text
+        ]
+        if missing_symbols:
+            raise ValueError(
+                f"SM86 positive-history backend proof is missing: "
+                f"{history_id} ({source}:{missing_symbols})"
+            )
+        family = str(record["family"])
+        candidate_id = str(record["candidate_id"])
+        for batch, family_map in sorted(batches.items()):
+            matches = [
+                value for value in family_map.get(family, [])
+                if value.get("id") == candidate_id
+            ]
+            if len(matches) != 1:
+                raise ValueError(
+                    f"SM86 positive-history candidate closure failed: "
+                    f"{history_id}/{family}/B{batch} matched {len(matches)}"
+                )
+            candidate = matches[0]
+            config = candidate_config(family, candidate)
+            if not config or set(config) - set(runtime_keys):
+                raise ValueError(
+                    f"SM86 positive-history plan mapping is invalid: "
+                    f"{history_id}/B{batch}"
+                )
+            markers = candidate.get("activation_markers", [])
+            if not isinstance(markers, list) or not markers:
+                raise ValueError(
+                    f"SM86 positive-history activation proof is missing: "
+                    f"{history_id}/B{batch}"
+                )
+            if candidate.get("requires_artifact"):
+                raise ValueError(
+                    f"SM86 retained route unexpectedly requires an external "
+                    f"artifact: {history_id}/B{batch}"
+                )
+    contract_sha256 = sha256_bytes(
+        canonical_json(SM86_POSITIVE_HISTORY).encode("utf-8")
+    )
+    return {
+        "complete": True,
+        "architecture": "sm86",
+        "record_count": len(SM86_POSITIVE_HISTORY),
+        "record_ids": [
+            str(record["history_id"]) for record in SM86_POSITIVE_HISTORY
+        ],
+        "contract_sha256": contract_sha256,
+        "validated_batches": sorted(batches),
+        "links": ["backend", "scan_candidate", "activation", "plan_apply"],
+        "performance_evidence_scope": "RTX3080Ti audit E003/E006/E014",
+        "does_not_inherit_sm89_performance_history": True,
+    }
+
+
 def materialize_space(
     architecture: str,
     gpu_class: str,
@@ -2254,7 +2515,8 @@ def materialize_space(
             values = deduplicate_candidates(values)
             runtime_keys = (
                 SM89_RUNTIME_CONFIG_KEYS
-                if architecture == "sm89" else SM120_RUNTIME_CONFIG_KEYS
+                if architecture in SM89_CATALOG_ARCHITECTURES
+                else SM120_RUNTIME_CONFIG_KEYS
             )
             for value in values:
                 unknown = sorted(set(candidate_config(family, value)) - runtime_keys)
@@ -2301,20 +2563,26 @@ def materialize_space(
         batch_payloads.append(batch_space)
     runtime_keys = (
         SM89_RUNTIME_CONFIG_KEYS
-        if architecture == "sm89" else SM120_RUNTIME_CONFIG_KEYS
+        if architecture in SM89_CATALOG_ARCHITECTURES
+        else SM120_RUNTIME_CONFIG_KEYS
     )
-    positive_history_closure = validate_positive_history_closure(
-        pathlib.Path(__file__).resolve().parents[1],
-        architecture,
-        {
-            int(item["batch"]): {
-                family: item[family]
-                for family in target_families
-            }
-            for item in batch_payloads
-        },
-        runtime_keys,
-    )
+    history_batches = {
+        int(item["batch"]): {
+            family: item[family]
+            for family in target_families
+        }
+        for item in batch_payloads
+    }
+    if architecture == "sm86":
+        positive_history_closure = validate_sm86_positive_history_closure(
+            pathlib.Path(__file__).resolve().parents[1],
+            history_batches, runtime_keys,
+        )
+    else:
+        positive_history_closure = validate_positive_history_closure(
+            pathlib.Path(__file__).resolve().parents[1],
+            architecture, history_batches, runtime_keys,
+        )
     topology = {
         "streams": streams,
         "device_ordinals": [device] * streams,
@@ -2340,6 +2608,7 @@ def materialize_space(
         "topology": topology,
         "batch_policy": "only explicitly materialized batches; no anchor or plateau pruning",
         "candidate_policy": {
+            "production_eligible": True,
             "accepted_history_points_define_local_search_neighborhoods_not_winners": True,
             "every_family_is_materialized_for_every_requested_batch": True,
             "every_family_has_an_explicit_keep_incumbent_candidate": True,
@@ -2351,6 +2620,12 @@ def materialize_space(
         "positive_history_closure": positive_history_closure,
         "history_recipe": {
             "sources": (
+                [
+                    "audit/E003-wide-dual-qkv",
+                    "audit/E006-postconv-bn-silu",
+                    "audit/E014-sm86-flash-t5",
+                ]
+                if architecture == "sm86" else
                 [
                     "optimization-history/sm89/HISTORY.md",
                     "optimization-history/docs/4090-optimization-portability.md",
@@ -2887,6 +3162,242 @@ def validate_artifact_bundle(
     return by_key, metadata
 
 
+def validate_linked_aot_replay_certificate(
+    certificate_path: pathlib.Path,
+    *,
+    space_path: pathlib.Path,
+    space: dict[str, object],
+    binary: pathlib.Path,
+    model: pathlib.Path,
+    model_identity: pathlib.Path,
+    config: pathlib.Path,
+    streams: int,
+    required: Sequence[tuple[str, int, str]],
+) -> tuple[
+    dict[tuple[str, int, str], dict[str, object]], dict[str, object]
+]:
+    """Bind linked all-head replay evidence to every scanned AOT entry.
+
+    This is intentionally stronger than trusting the master JSON's status:
+    all referenced replay artifacts are rehashed before the first benchmark
+    subprocess starts.  A generated-kernel torch check remains useful build
+    evidence, but it cannot stand in for the linked B/S topology replay.
+    """
+    certificate = read_json(certificate_path)
+    required_set = set(required)
+    expected_batches = {batch for _, batch, _ in required_set}
+    if not required_set:
+        raise ValueError("linked AOT replay certificate has no required candidates")
+    if len(expected_batches) != 1:
+        raise ValueError(
+            "one linked AOT replay certificate must cover exactly one batch"
+        )
+    expected_batch = next(iter(expected_batches))
+    expected_identities = {
+        "spaceSha256": sha256_file(space_path),
+        "binarySha256": sha256_file(binary),
+        "modelSha256": sha256_file(model),
+        "portableModelIdentitySha256": sha256_file(model_identity),
+        "configSha256": sha256_file(config),
+    }
+    if (
+        certificate.get("schema") != 1 or
+        certificate.get("kind") != LINKED_AOT_REPLAY_KIND or
+        certificate.get("status") != "passed" or
+        certificate.get("valid") is not True or
+        certificate.get("architecture") != space.get("architecture") or
+        int(certificate.get("batch", -1)) != expected_batch or
+        int(certificate.get("numRows", -1)) < 8192 or
+        int(certificate.get("candidateStreams", -1)) != streams or
+        int(certificate.get("passedCount", -1)) < len(required_set) or
+        int(certificate.get("completedCount", -1)) < len(required_set)
+    ):
+        raise ValueError(
+            "linked AOT replay certificate status or B/S coverage differs "
+            "from the requested scan"
+        )
+    for field, expected in expected_identities.items():
+        if certificate.get(field) != expected:
+            raise ValueError(
+                f"linked AOT replay certificate {field} differs from the scan"
+            )
+
+    corpus_path = pathlib.Path(str(certificate.get("corpus", ""))).resolve()
+    compare_script = pathlib.Path(
+        str(certificate.get("compareScript", ""))
+    ).resolve()
+    if (
+        not corpus_path.is_file() or
+        sha256_file(corpus_path) != certificate.get("corpusSha256") or
+        not compare_script.is_file() or
+        sha256_file(compare_script) != certificate.get("compareScriptSha256")
+    ):
+        raise ValueError("linked AOT replay corpus or comparator evidence differs")
+
+    def krnn_metadata(path: pathlib.Path) -> dict[str, object]:
+        with path.open("rb") as source:
+            if source.read(4) != b"KRNN":
+                raise ValueError(f"linked AOT replay has bad KRNN magic: {path}")
+            raw_length = source.read(4)
+            if len(raw_length) != 4:
+                raise ValueError(f"linked AOT replay has truncated KRNN: {path}")
+            (length,) = struct.unpack("<I", raw_length)
+            metadata = json.loads(source.read(length))
+        if not isinstance(metadata, dict):
+            raise ValueError(f"linked AOT replay has malformed KRNN metadata: {path}")
+        return metadata
+
+    reference = certificate.get("reference")
+    if not isinstance(reference, dict):
+        raise ValueError("linked AOT replay certificate lacks a reference")
+    reference_path = pathlib.Path(str(reference.get("reference", ""))).resolve()
+    reference_log = pathlib.Path(str(reference.get("log", ""))).resolve()
+    if (
+        not reference_path.is_file() or
+        sha256_file(reference_path) != reference.get("referenceSha256") or
+        not reference_log.is_file() or
+        sha256_file(reference_log) != reference.get("logSha256") or
+        int(reference.get("batch", -1)) != 13 or
+        reference.get("binarySha256") != expected_identities["binarySha256"] or
+        reference.get("modelSha256") != expected_identities["modelSha256"] or
+        reference.get("portableModelIdentitySha256") !=
+            expected_identities["portableModelIdentitySha256"] or
+        reference.get("configSha256") != expected_identities["configSha256"]
+    ):
+        raise ValueError("linked AOT replay FP32 reference evidence differs")
+    reference_metadata = krnn_metadata(reference_path)
+    if (
+        int(reference_metadata.get("numRows", -1)) < 8192 or
+        int(reference_metadata.get("maxBatchSize", -1)) != 13 or
+        int(reference_metadata.get("numThreads", -1)) != 1 or
+        reference_metadata.get("fixedBatchTailPadding") is not True or
+        "SM89 backend: runtime tactic active:" in reference_log.read_text()
+    ):
+        raise ValueError("linked AOT replay FP32 reference topology differs")
+
+    runs = certificate.get("runs")
+    if (
+        not isinstance(runs, list) or
+        len(runs) != int(certificate.get("passedCount", -1)) or
+        len(runs) != int(certificate.get("completedCount", -1))
+    ):
+        raise ValueError("linked AOT replay certificate run count differs")
+    by_key: dict[tuple[str, int, str], dict[str, object]] = {}
+    for run in runs:
+        if not isinstance(run, dict):
+            raise ValueError("linked AOT replay certificate contains a non-object run")
+        key = (
+            str(run.get("family")), expected_batch,
+            str(run.get("candidateId")),
+        )
+        try:
+            expected_candidate = candidate_map(
+                space, key[0], expected_batch,
+            )[key[2]]
+        except (KeyError, ValueError) as error:
+            raise ValueError(
+                f"linked AOT replay candidate is absent from the space: {key}"
+            ) from error
+        if not expected_candidate.get("requires_artifact"):
+            raise ValueError(
+                f"linked AOT replay candidate is not an AOT entry: {key}"
+            )
+        expected_markers = activation_markers(expected_candidate)
+        if key in by_key:
+            raise ValueError(f"duplicate linked AOT replay candidate: {key}")
+        checks = run.get("checks")
+        metadata = run.get("candidateKrnnMetadata")
+        if (
+            run.get("status") != "passed" or
+            not isinstance(checks, dict) or len(checks) != 15 or
+            not all(value is True for value in checks.values()) or
+            run.get("activationMarkersMissing") != [] or
+            run.get("activationMarkersRequired") != expected_markers or
+            not isinstance(metadata, dict) or
+            int(metadata.get("numRows", -1)) < 8192 or
+            int(metadata.get("maxBatchSize", -1)) != expected_batch or
+            int(metadata.get("numThreads", -1)) != streams or
+            metadata.get("fixedBatchTailPadding") is not True
+        ):
+            raise ValueError(f"linked AOT replay run did not pass all gates: {key}")
+        files = (
+            ("candidateKrnn", "candidateKrnnSha256"),
+            ("replayLog", "replayLogSha256"),
+            ("comparison", "comparisonSha256"),
+            ("comparisonLog", "comparisonLogSha256"),
+        )
+        resolved: dict[str, pathlib.Path] = {}
+        for path_field, hash_field in files:
+            path = pathlib.Path(str(run.get(path_field, ""))).resolve()
+            if not path.is_file() or sha256_file(path) != run.get(hash_field):
+                raise ValueError(
+                    f"linked AOT replay {path_field} evidence differs: {key}"
+                )
+            resolved[path_field] = path
+        actual_candidate_metadata = krnn_metadata(resolved["candidateKrnn"])
+        if actual_candidate_metadata != metadata:
+            raise ValueError(
+                f"linked AOT replay KRNN metadata differs from the master: {key}"
+            )
+        replay_text = resolved["replayLog"].read_text()
+        if any(marker not in replay_text for marker in expected_markers):
+            raise ValueError(
+                f"linked AOT replay activation marker is absent: {key}"
+            )
+        report = read_json(resolved["comparison"])
+        if (
+            report.get("status") != "passed" or
+            int(report.get("numRows", -1)) < 8192 or
+            int(report.get("exactBatch", -1)) != expected_batch or
+            int(report.get("candidateMaxBatchSize", -1)) != expected_batch or
+            report.get("candidateFixedBatchTailPadding") is not True or
+            report.get("referenceFixedBatchTailPadding") is not True or
+            report.get("inputAndTargetSectionsByteExact") is not True or
+            report.get("candidateBinarySha256") !=
+                expected_identities["binarySha256"] or
+            report.get("modelSha256") != expected_identities["modelSha256"] or
+            report.get("portableModelIdentitySha256") !=
+                expected_identities["portableModelIdentitySha256"] or
+            report.get("configSha256") != expected_identities["configSha256"] or
+            report.get("referenceSha256") != reference.get("referenceSha256") or
+            report.get("candidateSha256") != run.get("candidateKrnnSha256") or
+            report.get("replayLogSha256") != run.get("replayLogSha256") or
+            report.get("candidateOverrides") != run.get("overrides") or
+            report.get("checks") != checks
+        ):
+            raise ValueError(f"linked AOT replay comparison differs: {key}")
+        by_key[key] = {
+            "status": "passed",
+            "kind": "8192-row linked all-head FP32-reference replay",
+            "certificate": str(certificate_path.resolve()),
+            "certificate_sha256": sha256_file(certificate_path),
+            "comparison": str(resolved["comparison"]),
+            "comparison_sha256": run["comparisonSha256"],
+            "reference_sha256": reference["referenceSha256"],
+            "candidate_sha256": run["candidateKrnnSha256"],
+            "checks": checks,
+        }
+    missing = sorted(required_set - set(by_key))
+    if missing:
+        raise ValueError(
+            "linked AOT replay candidate coverage differs: "
+            f"missing={missing}"
+        )
+    metadata = {
+        "path": str(certificate_path.resolve()),
+        "sha256": sha256_file(certificate_path),
+        "kind": certificate["kind"],
+        "status": certificate["status"],
+        "candidate_count": len(by_key),
+        "required_candidate_count": len(required_set),
+        "batch": expected_batch,
+        "streams": streams,
+        "corpus_sha256": certificate.get("corpusSha256"),
+        "reference_sha256": reference.get("referenceSha256"),
+    }
+    return by_key, metadata
+
+
 def space_batches(space: dict[str, object]) -> dict[int, dict[str, object]]:
     result: dict[int, dict[str, object]] = {}
     for item in space.get("batches", []):
@@ -3173,6 +3684,9 @@ def validate_cross_family_config_ownership(
 ) -> None:
     """Require every cross-family config-key owner change to be declared."""
     exclusive_keys = {
+        "sm86": {
+            "cudaFlashAttentionTacticSm89": "fa4",
+        },
         "sm89": {
             "cudaFlashAttentionTacticSm89": "fa4",
         },
@@ -3340,7 +3854,7 @@ def topology_overrides(
                 values.update(extra)
     if architecture not in ARCHITECTURES:
         raise ValueError(f"unsupported architecture: {architecture}")
-    if architecture == "sm89":
+    if architecture in SM89_CATALOG_ARCHITECTURES:
         values["cudaSm89Backend"] = True
         values["cudaSm89Forward"] = True
     if architecture == "sm120":
@@ -3366,18 +3880,79 @@ def combined_overrides(
 
 
 def result_metric(record: dict[str, object]) -> float:
-    keys = (
+    aggregate_keys = (
+        "aggregateWallNNEvalsPerSec",
+        "aggregate_wall_nn_evals_per_sec",
+    )
+    aggregate_value: float | None = None
+    for key in aggregate_keys:
+        value = record.get(key)
+        if isinstance(value, (int, float)) and math.isfinite(float(value)):
+            aggregate_value = float(value)
+            break
+    schema_version = record.get("benchmarkMetricSchemaVersion")
+    if (
+        isinstance(schema_version, (int, float)) and
+        int(schema_version) >= 2
+    ):
+        if aggregate_value is None or aggregate_value <= 0.0:
+            raise ValueError(
+                "benchmark metric schema v2 has no finite positive aggregate "
+                "timed-wall throughput metric"
+            )
+        integer_fields = (
+            "batchSize", "numServerThreads", "numIterations",
+            "timedWallNNEvals",
+        )
+        integers: dict[str, int] = {}
+        for key in integer_fields:
+            value = record.get(key)
+            if type(value) is not int or value <= 0:
+                raise ValueError(
+                    f"benchmark metric schema v2 has invalid {key}"
+                )
+            integers[key] = value
+        expected_work = (
+            integers["batchSize"] * integers["numServerThreads"] *
+            integers["numIterations"]
+        )
+        if integers["timedWallNNEvals"] != expected_work:
+            raise ValueError(
+                "benchmark metric schema v2 timed work does not equal "
+                "batchSize*numServerThreads*numIterations"
+            )
+        timed_seconds = record.get("timedWallSeconds")
+        if not (
+            isinstance(timed_seconds, (int, float)) and
+            math.isfinite(float(timed_seconds)) and
+            float(timed_seconds) > 0.0
+        ):
+            raise ValueError(
+                "benchmark metric schema v2 has invalid timedWallSeconds"
+            )
+        recovered_work = aggregate_value * float(timed_seconds)
+        if not math.isclose(
+            recovered_work, float(expected_work), rel_tol=1e-7, abs_tol=1e-6,
+        ):
+            raise ValueError(
+                "benchmark metric schema v2 aggregate throughput is "
+                "inconsistent with timed work and wall seconds"
+            )
+        return aggregate_value
+    if aggregate_value is not None:
+        return aggregate_value
+    legacy_keys = (
         "combinedNNEvalsPerSec",
         "combined_nn_evals_per_sec",
         "nn_evals_per_sec",
         "nnEvalPerSec",
         "nnEval/s",
     )
-    for key in keys:
+    for key in legacy_keys:
         value = record.get(key)
         if isinstance(value, (int, float)) and math.isfinite(float(value)):
             return float(value)
-    raise ValueError("benchmark JSON has no finite combined throughput metric")
+    raise ValueError("benchmark JSON has no finite throughput metric")
 
 
 def last_json_object(text: str) -> dict[str, object]:
@@ -3424,10 +3999,265 @@ def summarize_samples(
     }
 
 
+def _one_sided_95_t_critical(sample_count: int) -> float:
+    """Return a conservative one-sided 95% Student-t critical value.
+
+    Confirmation currently requires at least four pairs.  Keeping this tiny
+    table in the workflow avoids adding scipy as an operational dependency.
+    Values above 30 pairs deliberately retain the df=30 value instead of
+    switching to the slightly less conservative normal asymptote.
+    """
+    if sample_count < 2:
+        raise ValueError("a confidence bound requires at least two pairs")
+    by_degrees_of_freedom = (
+        6.313752, 2.919986, 2.353363, 2.131847, 2.015048,
+        1.943180, 1.894579, 1.859548, 1.833113, 1.812461,
+        1.795885, 1.782288, 1.770933, 1.761310, 1.753050,
+        1.745884, 1.739607, 1.734064, 1.729133, 1.724718,
+        1.720743, 1.717144, 1.713872, 1.710882, 1.708141,
+        1.705618, 1.703288, 1.701131, 1.699127, 1.697261,
+    )
+    degrees_of_freedom = sample_count - 1
+    return by_degrees_of_freedom[
+        min(degrees_of_freedom, len(by_degrees_of_freedom)) - 1
+    ]
+
+
+def summarize_paired_confirmation(
+    incumbent_samples: Sequence[float],
+    challenger_samples: Sequence[float],
+    *,
+    min_improvement_fraction: float,
+) -> dict[str, object]:
+    """Evaluate a drift-resistant paired throughput confirmation.
+
+    Ratios are analyzed in log space because throughput effects are
+    multiplicative.  A challenger is accepted only when all four gates pass:
+    enough adjacent pairs, every pair has the same positive direction, the
+    geometric-mean effect reaches the configured minimum, and the one-sided
+    95% paired-t lower confidence bound remains above zero.
+    """
+    if not 0.0 <= min_improvement_fraction < 1.0:
+        raise ValueError("minimum confirmation improvement must be in [0,1)")
+    incumbents = [float(value) for value in incumbent_samples]
+    challengers = [float(value) for value in challenger_samples]
+    if len(incumbents) != len(challengers):
+        raise ValueError("paired confirmation sample counts differ")
+    if len(incumbents) < MIN_CONFIRMATION_PAIRS:
+        raise ValueError(
+            f"paired confirmation requires at least {MIN_CONFIRMATION_PAIRS} pairs"
+        )
+    values = [*incumbents, *challengers]
+    if not all(math.isfinite(value) and value > 0.0 for value in values):
+        raise ValueError("paired confirmation samples must be finite and positive")
+
+    pair_improvements = [
+        challenger / incumbent - 1.0
+        for incumbent, challenger in zip(incumbents, challengers)
+    ]
+    log_ratios = [
+        math.log(challenger / incumbent)
+        for incumbent, challenger in zip(incumbents, challengers)
+    ]
+    mean_log_ratio = statistics.mean(log_ratios)
+    standard_deviation = statistics.stdev(log_ratios)
+    standard_error = standard_deviation / math.sqrt(len(log_ratios))
+    t_critical = _one_sided_95_t_critical(len(log_ratios))
+    lower_log_ratio = mean_log_ratio - t_critical * standard_error
+    geometric_improvement = math.expm1(mean_log_ratio)
+    lower_improvement = math.expm1(lower_log_ratio)
+    direction_consistent = all(value > 0.0 for value in pair_improvements)
+    effect_size_passed = geometric_improvement >= min_improvement_fraction
+    confidence_passed = lower_improvement > 0.0
+    accepted = (
+        direction_consistent and effect_size_passed and confidence_passed
+    )
+    return {
+        "test": "paired_log_ratio_one_sided_student_t",
+        "confidence_level": CONFIRMATION_CONFIDENCE_LEVEL,
+        "pair_count": len(log_ratios),
+        "pair_improvement_fractions": pair_improvements,
+        "pair_log_ratios": log_ratios,
+        "mean_log_ratio": mean_log_ratio,
+        "sample_standard_deviation_log_ratio": standard_deviation,
+        "standard_error_log_ratio": standard_error,
+        "t_critical": t_critical,
+        "geometric_mean_improvement_fraction": geometric_improvement,
+        "lower_confidence_bound_improvement_fraction": lower_improvement,
+        "minimum_improvement_fraction": min_improvement_fraction,
+        "direction_consistent": direction_consistent,
+        "effect_size_passed": effect_size_passed,
+        "confidence_passed": confidence_passed,
+        "accepted": accepted,
+    }
+
+
+def selection_confirmation_error(row: dict[str, object]) -> str | None:
+    """Return why an accepted tuning change lacks reproducible paired proof."""
+    winner_id = row.get("candidate_id")
+    incumbent_id = row.get("history_incumbent_candidate_id")
+    accepted_change = winner_id != incumbent_id
+    if row.get("history_accepted_change") is not accepted_change:
+        return "history accepted-change flag disagrees with winner/incumbent IDs"
+    if not accepted_change:
+        if row.get("history_improvement_fraction_vs_incumbent") != 0.0:
+            return "retained incumbent reports a nonzero improvement"
+        return None
+    minimum = row.get("history_min_improvement_fraction")
+    if not isinstance(minimum, (int, float)) or isinstance(minimum, bool):
+        return "accepted change has no numeric minimum effect"
+    if float(minimum) < DEFAULT_MIN_DISCOVERY_IMPROVEMENT_FRACTION:
+        return "accepted change used a minimum effect below the production floor"
+    confirmation = row.get("selection_confirmation")
+    if not isinstance(confirmation, dict) or confirmation.get("schema") != 2:
+        return "accepted change has no schema-2 paired confirmation"
+    if confirmation.get("metric") != "aggregate_timed_wall_nn_evals_per_sec":
+        return "paired confirmation did not use aggregate timed-wall throughput"
+    if confirmation.get("design") != "ABBA-BAAB_adjacent_pairs":
+        return "paired confirmation design is not ABBA-BAAB"
+    if confirmation.get("order") != list(CONFIRMATION_ORDER):
+        return "paired confirmation order differs from the fixed design"
+    if confirmation.get("incumbent_candidate_id") != incumbent_id:
+        return "paired confirmation incumbent ID differs from history"
+    if confirmation.get("challenger_candidate_id") != winner_id:
+        return "paired confirmation challenger ID differs from winner"
+    iterations = confirmation.get("iterations")
+    if (
+        type(iterations) is not int or
+        iterations < DEFAULT_CONFIRMATION_ITERATIONS
+    ):
+        return "paired confirmation has too few formal iterations"
+    incumbent_samples = confirmation.get("incumbent_samples")
+    challenger_samples = confirmation.get("challenger_samples")
+    if not isinstance(incumbent_samples, list) or not isinstance(
+        challenger_samples, list
+    ):
+        return "paired confirmation samples are missing"
+    try:
+        recalculated = summarize_paired_confirmation(
+            incumbent_samples, challenger_samples,
+            min_improvement_fraction=float(minimum),
+        )
+    except (TypeError, ValueError) as error:
+        return f"paired confirmation samples are invalid: {error}"
+    if recalculated["accepted"] is not True or confirmation.get("accepted") is not True:
+        return "paired confirmation does not accept the challenger"
+    stored_statistics = confirmation.get("statistics")
+    if not isinstance(stored_statistics, dict):
+        return "paired confirmation statistics are missing"
+    numeric_statistics = (
+        "geometric_mean_improvement_fraction",
+        "lower_confidence_bound_improvement_fraction",
+        "mean_log_ratio",
+        "standard_error_log_ratio",
+    )
+    for key in numeric_statistics:
+        stored = stored_statistics.get(key)
+        expected = recalculated[key]
+        if not (
+            isinstance(stored, (int, float)) and
+            math.isfinite(float(stored)) and
+            math.isclose(float(stored), float(expected), rel_tol=1e-12, abs_tol=1e-12)
+        ):
+            return f"paired confirmation stored {key} is inconsistent"
+    for key in (
+        "pair_count", "direction_consistent", "effect_size_passed",
+        "confidence_passed", "accepted",
+    ):
+        if stored_statistics.get(key) != recalculated[key]:
+            return f"paired confirmation stored {key} is inconsistent"
+    recorded_gain = row.get("history_improvement_fraction_vs_incumbent")
+    expected_gain = recalculated["geometric_mean_improvement_fraction"]
+    if not (
+        isinstance(recorded_gain, (int, float)) and
+        math.isclose(
+            float(recorded_gain), float(expected_gain),
+            rel_tol=1e-12, abs_tol=1e-12,
+        )
+    ):
+        return "history improvement differs from the paired effect size"
+    runs = confirmation.get("runs")
+    if not isinstance(runs, list) or len(runs) != len(CONFIRMATION_ORDER):
+        return "paired confirmation does not contain all eight raw runs"
+    sample_positions = {"incumbent": 0, "challenger": 0}
+    candidate_ids = {
+        "incumbent": incumbent_id, "challenger": winner_id,
+    }
+    samples_by_label = {
+        "incumbent": incumbent_samples, "challenger": challenger_samples,
+    }
+    for sequence, label in enumerate(CONFIRMATION_ORDER):
+        run = runs[sequence]
+        if not isinstance(run, dict):
+            return "paired confirmation contains a malformed raw run"
+        sample_index = sample_positions[label]
+        sample_positions[label] += 1
+        expected_throughput = float(samples_by_label[label][sample_index])
+        throughput = run.get("throughput")
+        benchmark = run.get("benchmark")
+        if not (
+            isinstance(benchmark, dict) and
+            type(benchmark.get("benchmarkMetricSchemaVersion")) is int and
+            int(benchmark["benchmarkMetricSchemaVersion"]) >= 2
+        ):
+            return "paired confirmation raw run lacks schema-v2 benchmark evidence"
+        try:
+            recovered_throughput = result_metric(benchmark)
+        except ValueError as error:
+            return f"paired confirmation raw benchmark is invalid: {error}"
+        if (
+            run.get("sequence") != sequence or run.get("label") != label or
+            run.get("candidate_id") != candidate_ids[label] or
+            not isinstance(throughput, (int, float)) or
+            not math.isclose(
+                float(throughput), expected_throughput,
+                rel_tol=1e-12, abs_tol=1e-12,
+            ) or
+            not math.isclose(
+                float(recovered_throughput), expected_throughput,
+                rel_tol=1e-12, abs_tol=1e-12,
+            )
+        ):
+            return "paired confirmation raw-run order or throughput is inconsistent"
+    return None
+
+
+def selection_origin_confirmation_error(
+    row: dict[str, object], *, family: str, trusted_seed_id: str | None,
+) -> str | None:
+    """Require paired proof for every non-control, non-history-seed tactic."""
+    candidate_id = row.get("candidate_id")
+    if candidate_id in (f"{family}-keep-incumbent", trusted_seed_id):
+        return None
+    confirmation = row.get("selection_origin_confirmation")
+    if not isinstance(confirmation, dict):
+        return "selected tactic has no origin confirmation"
+    statistics_summary = confirmation.get("statistics")
+    if not isinstance(statistics_summary, dict):
+        return "selected tactic origin has no paired statistics"
+    minimum = statistics_summary.get("minimum_improvement_fraction")
+    gain = statistics_summary.get("geometric_mean_improvement_fraction")
+    incumbent_id = confirmation.get("incumbent_candidate_id")
+    if not isinstance(incumbent_id, str):
+        return "selected tactic origin has no incumbent ID"
+    proxy = {
+        "candidate_id": candidate_id,
+        "history_incumbent_candidate_id": incumbent_id,
+        "history_accepted_change": True,
+        "history_min_improvement_fraction": minimum,
+        "history_improvement_fraction_vs_incumbent": gain,
+        "selection_confirmation": confirmation,
+    }
+    error = selection_confirmation_error(proxy)
+    return f"selected tactic origin is invalid: {error}" if error else None
+
+
 def stable_metric(row: dict[str, object]) -> float | None:
     value = row.get("stable_long_nn_evals_per_sec")
     iterations = row.get("measurement_iterations", row.get("iterations"))
     sample_count = row.get("measurement_sample_count")
+    relative_spread = row.get("measurement_relative_spread")
+    allowed_spread = row.get("measurement_max_relative_spread")
     kind = row.get("measurement_kind")
     if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
         return None
@@ -3435,9 +4265,51 @@ def stable_metric(row: dict[str, object]) -> float | None:
         return None
     if not isinstance(sample_count, (int, float)) or int(sample_count) < MIN_STABLE_SAMPLES:
         return None
+    if not (
+        isinstance(relative_spread, (int, float)) and
+        math.isfinite(float(relative_spread))
+    ):
+        return None
+    if allowed_spread is None:
+        # Portable schema-1 plans did not copy this field. Their selection
+        # metadata fixes the historical cap at 10%.
+        allowed_spread = LEGACY_MAX_RELATIVE_SPREAD
+    if not (
+        isinstance(allowed_spread, (int, float)) and
+        math.isfinite(float(allowed_spread)) and
+        0.0 <= float(allowed_spread) <= LEGACY_MAX_RELATIVE_SPREAD and
+        float(relative_spread) <= float(allowed_spread)
+    ):
+        return None
     if kind != "long_stable":
         return None
     return float(value)
+
+
+def production_stable_metric(row: dict[str, object]) -> float | None:
+    """Apply the non-bypassable stability floor for newly tuned plans."""
+    value = stable_metric(row)
+    if value is None:
+        return None
+    sample_count = row.get("measurement_sample_count")
+    relative_spread = row.get("measurement_relative_spread")
+    allowed_spread = row.get("measurement_max_relative_spread")
+    if (
+        type(sample_count) is not int or
+        sample_count < MIN_PRODUCTION_STABLE_SAMPLES
+    ):
+        return None
+    if not (
+        isinstance(relative_spread, (int, float)) and
+        float(relative_spread) <= DEFAULT_MAX_RELATIVE_SPREAD
+    ):
+        return None
+    if not (
+        isinstance(allowed_spread, (int, float)) and
+        float(allowed_spread) <= DEFAULT_MAX_RELATIVE_SPREAD
+    ):
+        return None
+    return value
 
 
 def choose_history_stage_winner(
@@ -3858,6 +4730,18 @@ def _portable_correctness_evidence(value: object) -> object:
     }
 
 
+def _portable_selection_confirmation(value: object) -> object:
+    if not isinstance(value, dict):
+        return value
+    # Raw commands, log paths, and occupancy traces stay in the content-
+    # addressed result.  The receiver only needs the complete numeric decision
+    # evidence and fixed experimental design.
+    return {
+        key: item for key, item in value.items()
+        if key != "runs"
+    }
+
+
 def absolute_paths_in_json(value: object, path: str = "$") -> list[str]:
     found: list[str] = []
     if isinstance(value, dict):
@@ -4079,7 +4963,7 @@ def build_plan(
             }
             stable: list[tuple[float, str, dict[str, object]]] = []
             for candidate_id, row in observed.items():
-                metric = stable_metric(row)
+                metric = production_stable_metric(row)
                 if metric is not None:
                     stable.append((metric, candidate_id, row))
             stable.sort(key=lambda item: (-item[0], item[1]))
@@ -4103,6 +4987,14 @@ def build_plan(
                     "history_improvement_fraction_vs_incumbent"
                 )
                 minimum_gain = winner_row.get("history_min_improvement_fraction")
+                confirmation_error = selection_confirmation_error(winner_row)
+                trusted_seed_id = positive_history_seed_candidate_ids(
+                    architecture, gpu_class, batch,
+                ).get(family)
+                origin_error = selection_origin_confirmation_error(
+                    winner_row, family=family,
+                    trusted_seed_id=trusted_seed_id,
+                )
                 if (
                     not isinstance(incumbent_id, str) or
                     incumbent_id not in expected or
@@ -4110,10 +5002,14 @@ def build_plan(
                     not isinstance(recorded_gain, (int, float)) or
                     not isinstance(minimum_gain, (int, float)) or
                     (accepted_change and float(recorded_gain) < float(minimum_gain)) or
-                    (not accepted_change and float(recorded_gain) != 0.0)
+                    (not accepted_change and float(recorded_gain) != 0.0) or
+                    confirmation_error is not None or
+                    origin_error is not None
                 ):
                     history_evidence_error = (
-                        "winner lacks non-regressing measured-incumbent evidence"
+                        "winner lacks production selection evidence: " +
+                        (confirmation_error or origin_error or
+                         "non-regressing measured-incumbent evidence is invalid")
                     )
             family_coverage[str(batch)] = {
                 "expected_count": len(expected),
@@ -4141,7 +5037,7 @@ def build_plan(
             if not observed or history_error:
                 continue
             candidate_id, row = history_winners[0]
-            stable_value = stable_metric(row)
+            stable_value = production_stable_metric(row)
             discovery_value = row.get("nn_evals_per_sec_median")
             selected_candidate = expected[candidate_id]
             recorded_candidate = row.get("candidate")
@@ -4159,8 +5055,19 @@ def build_plan(
                 "measurement_sample_count": row.get("measurement_sample_count"),
                 "measurement_kind": row.get("measurement_kind", "long_stable"),
                 "measurement_relative_spread": row.get("measurement_relative_spread"),
+                "measurement_max_relative_spread": row.get(
+                    "measurement_max_relative_spread"
+                ),
                 "history_base_overrides": row.get("history_base_overrides"),
                 "history_accumulated_overrides": row.get("history_accumulated_overrides"),
+                "selection_confirmation": _portable_selection_confirmation(
+                    row.get("selection_confirmation")
+                ),
+                "selection_origin_confirmation": (
+                    _portable_selection_confirmation(
+                        row.get("selection_origin_confirmation")
+                    )
+                ),
                 "correctness": _portable_correctness_evidence(
                     row.get("correctness")
                 ),
@@ -4193,7 +5100,8 @@ def build_plan(
         joint_rows = [
             row for (family_name, row_batch, _), row in rows_by_key.items()
             if row_batch == batch and family_name in requested_families and
-            row.get("history_final_joint") is True and stable_metric(row) is not None
+            row.get("history_final_joint") is True and
+            production_stable_metric(row) is not None
         ]
         if len(joint_rows) != 1:
             missing.append({
@@ -4208,13 +5116,16 @@ def build_plan(
             continue
         row = joint_rows[0]
         final_joint[str(batch)] = {
-            "stable_long_nn_evals_per_sec": stable_metric(row),
+            "stable_long_nn_evals_per_sec": production_stable_metric(row),
             "nn_evals_per_sec_samples": row.get("nn_evals_per_sec_samples", []),
             "measurement_iterations": row.get("measurement_iterations"),
             "measurement_warmup": row.get("measurement_warmup"),
             "measurement_sample_count": row.get("measurement_sample_count"),
             "measurement_kind": row.get("measurement_kind"),
             "measurement_relative_spread": row.get("measurement_relative_spread"),
+            "measurement_max_relative_spread": row.get(
+                "measurement_max_relative_spread"
+            ),
             "family": row.get("family"),
             "candidate_id": row.get("candidate_id"),
             "accumulated_overrides": row.get("history_accumulated_overrides"),
@@ -4227,6 +5138,13 @@ def build_plan(
     if len(model_hashes) > 1 or len(config_hashes) > 1:
         raise ValueError("scan result files contain mixed model/config hashes")
     identity_missing: list[str] = []
+    candidate_policy = space.get("candidate_policy", {})
+    space_production_eligible = not (
+        isinstance(candidate_policy, dict) and
+        candidate_policy.get("production_eligible") is False
+    )
+    if not space_production_eligible:
+        identity_missing.append("search_space_not_production_eligible")
     if not model_hashes:
         identity_missing.append("model_sha256")
     if not config_hashes:
@@ -4277,6 +5195,10 @@ def build_plan(
             cuda_capabilities_at_scan[key] for key in sorted(cuda_capabilities_at_scan)
         ],
     }
+    if len(final_joint) == len(requested_batches):
+        target["runtime_config"] = plan_runtime_config_from_final_joint(
+            final_joint, requested_batches,
+        )
     plan_identity = {
         "target": target,
         "positive_history_contract_sha256": positive_history_closure.get(
@@ -4311,13 +5233,24 @@ def build_plan(
         "status": "complete_long_stable" if ready else "partial_or_unstable",
         "ready_for_scan_bypass": ready,
         "production_ready": production_ready,
+        "search_space_production_eligible": space_production_eligible,
         "positive_history_closure": positive_history_closure,
         "selection": {
-            "metric": "stable long natural whole-graph combined nnEval/s",
-            "method": "history-ordered accumulated coordinate winners; final joint long-stable row",
+            "metric": "aggregate timed-wall physical nnEval/s",
+            "method": (
+                "history-ordered accumulated coordinate winners; accepted changes "
+                "require ABBA-BAAB paired log-ratio evidence; final joint long-stable row"
+            ),
             "minimum_iterations": MIN_LONG_ITERATIONS,
-            "minimum_samples": MIN_STABLE_SAMPLES,
+            "minimum_samples": MIN_PRODUCTION_STABLE_SAMPLES,
             "maximum_relative_spread": DEFAULT_MAX_RELATIVE_SPREAD,
+            "minimum_improvement_fraction": (
+                DEFAULT_MIN_DISCOVERY_IMPROVEMENT_FRACTION
+            ),
+            "confirmation_iterations": DEFAULT_CONFIRMATION_ITERATIONS,
+            "confirmation_pairs": MIN_CONFIRMATION_PAIRS,
+            "confirmation_confidence_level": CONFIRMATION_CONFIDENCE_LEVEL,
+            "confirmation_requires_consistent_direction": True,
             "short_scan_values_are_never_final": True,
         },
         "target": target,
@@ -4541,15 +5474,55 @@ def validate_plan(
     final_joint = plan.get("final_joint")
     if not isinstance(final_joint, dict):
         raise ValueError("plan has no final joint long-gate results")
+    selection_contract = plan.get("selection", {})
+    requires_production_stability = (
+        isinstance(selection_contract, dict) and
+        selection_contract.get("metric") == (
+            "aggregate timed-wall physical nnEval/s"
+        )
+    )
     final_metrics: dict[str, float] = {}
     for batch in selected_batches:
         entry = final_joint.get(str(batch))
         if not isinstance(entry, dict):
             raise ValueError(f"plan has no final joint B{batch} result")
-        final_metrics[str(batch)] = require_stable_metric(entry)
+        if requires_production_stability:
+            metric = production_stable_metric(entry)
+            if metric is None:
+                raise ValueError(
+                    f"plan final joint B{batch} does not satisfy the production "
+                    "stability floor"
+                )
+            final_metrics[str(batch)] = metric
+        else:
+            final_metrics[str(batch)] = require_stable_metric(entry)
+    runtime_config = target.get("runtime_config")
+    legacy_runtime_config = runtime_config is None
+    if legacy_runtime_config:
+        if plan_arch == "sm86":
+            raise ValueError("SM86 plan has no certified runtime execution contract")
+    else:
+        if (
+            not isinstance(runtime_config, dict) or
+            set(runtime_config) != set(PLAN_RUNTIME_CONFIG_KEYS) or
+            any(not isinstance(runtime_config[key], bool)
+                for key in PLAN_RUNTIME_CONFIG_KEYS)
+        ):
+            raise ValueError("plan runtime execution contract is malformed")
+        expected_runtime_config = plan_runtime_config_from_final_joint(
+            final_joint, selected_batches,
+        )
+        if runtime_config != expected_runtime_config:
+            raise ValueError(
+                "plan runtime execution contract differs from final joint evidence"
+            )
     warnings = [
         "recorded driver/CUDA/cuDNN/package versions are compatibility evidence, not exact-match requirements",
     ]
+    if legacy_runtime_config:
+        warnings.append(
+            "legacy plan has no explicit runtime execution contract"
+        )
     if not plan.get("production_ready", False):
         warnings.append(
             "production_ready is false: selected candidates still need an explicit correctness.status=passed record"
@@ -4842,6 +5815,123 @@ def scan_command(
     return command, overrides
 
 
+def _run_paired_selection_confirmation(
+    pair_rows: dict[str, dict[str, object]],
+    *,
+    confirmation_iterations: int,
+    warmup: int,
+    min_improvement_fraction: float,
+    max_attempts: int,
+    timeout_seconds: float,
+    device: int,
+    raw_dir: pathlib.Path,
+    stem_prefix: str,
+    failure_context: str,
+) -> dict[str, object]:
+    """Run and persist one ABBA-BAAB decision boundary."""
+    if set(pair_rows) != {"incumbent", "challenger"}:
+        raise ValueError("selection confirmation requires incumbent and challenger rows")
+    pair_samples: dict[str, list[float]] = {
+        "incumbent": [], "challenger": [],
+    }
+    pair_runs: list[dict[str, object]] = []
+    for sequence, label in enumerate(CONFIRMATION_ORDER):
+        pair_row = pair_rows[label]
+        row_command = pair_row.get("command")
+        if not isinstance(row_command, list):
+            raise ValueError(f"{failure_context} row has no benchmark command")
+        confirm_command = [str(item) for item in row_command]
+        if confirm_command.count("-iterations") != 1:
+            raise ValueError(
+                f"{failure_context} benchmark command has no unique -iterations"
+            )
+        iterations_index = confirm_command.index("-iterations") + 1
+        if iterations_index >= len(confirm_command):
+            raise ValueError(f"{failure_context} benchmark command truncates -iterations")
+        confirm_command[iterations_index] = str(confirmation_iterations)
+        completed = None
+        stdout_path = None
+        stderr_path = None
+        occupancy_evidence: dict[str, object] = {}
+        attempt_records: list[dict[str, object]] = []
+        for attempt in range(max_attempts):
+            completed, timed_out, occupancy_evidence = (
+                _run_benchmark_with_occupancy(
+                    confirm_command, device=device, timeout=timeout_seconds,
+                )
+            )
+            safe_stem = re.sub(
+                r"[^A-Za-z0-9_.-]+", "_",
+                f"{stem_prefix}-{label}-q{sequence}-a{attempt}",
+            )
+            stdout_path = raw_dir / f"{safe_stem}.out"
+            stderr_path = raw_dir / f"{safe_stem}.err"
+            stdout_path.write_text(completed.stdout, encoding="utf-8")
+            stderr_path.write_text(completed.stderr, encoding="utf-8")
+            attempt_records.append({
+                "attempt": attempt,
+                "returncode": completed.returncode,
+                "timed_out": timed_out,
+                "stdout": str(stdout_path),
+                "stderr": str(stderr_path),
+                "gpu_occupancy": occupancy_evidence,
+            })
+            if completed.returncode == 0:
+                break
+        assert completed is not None
+        assert stdout_path is not None
+        assert stderr_path is not None
+        if completed.returncode != 0:
+            raise RuntimeError(
+                f"ABBA-BAAB confirmation failed for {failure_context}/{label}; "
+                f"see {stderr_path}"
+            )
+        benchmark = _parse_benchmark_record(completed.stdout)
+        schema_version = benchmark.get("benchmarkMetricSchemaVersion")
+        if type(schema_version) is not int or schema_version < 2:
+            raise ValueError(
+                f"{failure_context} confirmation requires benchmark metric "
+                "schema v2 aggregate timed-wall evidence"
+            )
+        throughput = result_metric(benchmark)
+        pair_samples[label].append(throughput)
+        pair_runs.append({
+            "sequence": sequence,
+            "label": label,
+            "candidate_id": pair_row.get("candidate_id"),
+            "throughput": throughput,
+            "benchmark": benchmark,
+            "command": confirm_command,
+            "stdout": str(stdout_path),
+            "stderr": str(stderr_path),
+            "attempts": attempt_records,
+            "gpu_occupancy": occupancy_evidence,
+        })
+    statistics_summary = summarize_paired_confirmation(
+        pair_samples["incumbent"], pair_samples["challenger"],
+        min_improvement_fraction=min_improvement_fraction,
+    )
+    incumbent_mean = statistics.mean(pair_samples["incumbent"])
+    challenger_mean = statistics.mean(pair_samples["challenger"])
+    return {
+        "schema": 2,
+        "metric": "aggregate_timed_wall_nn_evals_per_sec",
+        "design": "ABBA-BAAB_adjacent_pairs",
+        "order": list(CONFIRMATION_ORDER),
+        "iterations": confirmation_iterations,
+        "warmup": warmup,
+        "incumbent_candidate_id": pair_rows["incumbent"].get("candidate_id"),
+        "challenger_candidate_id": pair_rows["challenger"].get("candidate_id"),
+        "incumbent_samples": pair_samples["incumbent"],
+        "challenger_samples": pair_samples["challenger"],
+        "incumbent_mean_nn_evals_per_sec": incumbent_mean,
+        "challenger_mean_nn_evals_per_sec": challenger_mean,
+        "statistics": statistics_summary,
+        "accepted": statistics_summary["accepted"],
+        "runs": pair_runs,
+    }
+
+
 def official_fallback_overrides(
     architecture: str, device: int, streams: int, batch: int,
 ) -> dict[str, object]:
@@ -4911,8 +6001,8 @@ def stable_optimized_prescan_state(
     values.update(applied)
     values.update(topology_overrides(architecture, device, streams))
     values.update({
-        "cudaSm89Backend": architecture == "sm89",
-        "cudaSm89Forward": architecture == "sm89",
+        "cudaSm89Backend": architecture in SM89_CATALOG_ARCHITECTURES,
+        "cudaSm89Forward": architecture in SM89_CATALOG_ARCHITECTURES,
         "cudaSm120Backend": architecture == "sm120",
         "cudaDisableWarmup": True,
         "cudaWarmupOnlyMaxBatchSize": True,
@@ -4938,9 +6028,10 @@ def run_stable_optimized_batch_prescan(args: argparse.Namespace) -> None:
         raise ValueError(
             f"optimized prescan requires at least {MIN_DISCOVERY_WARMUP} warmups"
         )
-    if args.repeats < MIN_STABLE_SAMPLES:
+    if args.repeats < MIN_PRODUCTION_STABLE_SAMPLES:
         raise ValueError(
-            f"optimized prescan requires at least {MIN_STABLE_SAMPLES} repeats"
+            "optimized prescan requires at least "
+            f"{MIN_PRODUCTION_STABLE_SAMPLES} repeats"
         )
     if args.top_batches < 1:
         raise ValueError("--top-batches must be positive")
@@ -5129,11 +6220,13 @@ def run_scan(args: argparse.Namespace) -> None:
     if any(item not in target_families for item in families):
         raise ValueError(f"invalid families: {families}")
     if args.phase == "long" and (
-        args.iterations < MIN_LONG_ITERATIONS or args.repeats < MIN_STABLE_SAMPLES
+        args.iterations < MIN_LONG_ITERATIONS or
+        args.repeats < MIN_PRODUCTION_STABLE_SAMPLES
     ):
         raise ValueError(
             "long scan phase requires at least "
-            f"{MIN_LONG_ITERATIONS} iterations and {MIN_STABLE_SAMPLES} repeats"
+            f"{MIN_LONG_ITERATIONS} iterations and "
+            f"{MIN_PRODUCTION_STABLE_SAMPLES} repeats"
         )
     if (
         args.phase == "discovery" and not args.dry_run and
@@ -5175,6 +6268,8 @@ def run_scan(args: argparse.Namespace) -> None:
                 raise ValueError(f"{label} does not exist: {path}")
     artifact_evidence: dict[tuple[str, int, str], dict[str, object]] = {}
     artifact_bundle_metadata: dict[str, object] | None = None
+    replay_evidence: dict[tuple[str, int, str], dict[str, object]] = {}
+    replay_certificate_metadata: dict[str, object] | None = None
     if artifact_candidates and not args.dry_run:
         if not args.artifact_bundle:
             preview = ", ".join(
@@ -5189,6 +6284,19 @@ def run_scan(args: argparse.Namespace) -> None:
             pathlib.Path(args.artifact_bundle).resolve(),
             space_path=space_path, space=space, binary=binary,
             required=artifact_candidates,
+        )
+        if not args.linked_aot_replay_certificate:
+            raise ValueError(
+                "AOT candidates require --linked-aot-replay-certificate with "
+                "linked B/S all-head correctness evidence"
+            )
+        replay_evidence, replay_certificate_metadata = (
+            validate_linked_aot_replay_certificate(
+                pathlib.Path(args.linked_aot_replay_certificate).resolve(),
+                space_path=space_path, space=space, binary=binary, model=model,
+                model_identity=model_identity, config=config, streams=streams,
+                required=artifact_candidates,
+            )
         )
     current_binary_sha256 = sha256_file(binary) if binary.is_file() else None
     current_config_sha256 = sha256_file(config) if config.is_file() else None
@@ -5210,9 +6318,13 @@ def run_scan(args: argparse.Namespace) -> None:
             previous.get("space_sha256") == sha256_file(space_path) and
             previous.get("implementation_identity") == implementation_identity and
             isinstance(previous_identity, dict) and
+            previous_identity.get("binary_sha256") == current_binary_sha256 and
             previous_identity.get("config_sha256") == current_config_sha256 and
             previous_identity.get("execution_model_sha256") == current_execution_model_sha256 and
-            previous_identity.get("model_sha256") == current_identity_model_sha256
+            previous_identity.get("model_sha256") == current_identity_model_sha256 and
+            previous.get("artifact_bundle") == artifact_bundle_metadata and
+            previous.get("linked_aot_replay_certificate") ==
+                replay_certificate_metadata
         ):
             rows = [row for row in previous.get("rows", []) if isinstance(row, dict)]
             resumed_compatible = True
@@ -5226,6 +6338,13 @@ def run_scan(args: argparse.Namespace) -> None:
         if resumed_compatible else None
     )
 
+    if args.resume and output.is_file() and not resumed_compatible:
+        raise ValueError(
+            "--resume output identity differs from the current search space, "
+            "workflow implementation, config, or model; preserve the old "
+            "result under a new name before starting a fresh scan"
+        )
+
     def checkpoint_if_changed() -> None:
         nonlocal persisted_rows
         serialized = json.dumps(rows, sort_keys=True, separators=(",", ":"))
@@ -5234,7 +6353,8 @@ def run_scan(args: argparse.Namespace) -> None:
         _write_scan_payload(
             output, space_path, space, architecture, gpu_class, device,
             streams, args, started, provenance, artifact_bundle_metadata,
-            rows, device_properties, implementation_identity,
+            replay_certificate_metadata, rows, device_properties,
+            implementation_identity,
         )
         persisted_rows = serialized
 
@@ -5381,8 +6501,10 @@ def run_scan(args: argparse.Namespace) -> None:
                     "finished_utc": utc_now(),
                     "binary_sha256": current_binary_sha256,
                     "config_sha256": current_config_sha256,
-                    "correctness": artifact_evidence.get(key, {}).get(
-                        "correctness", value.get("correctness")
+                    "correctness": replay_evidence.get(
+                        key, artifact_evidence.get(key, {}).get(
+                            "correctness", value.get("correctness")
+                        )
                     ),
                     "artifact_evidence": artifact_evidence.get(key),
                     "runs": run_records,
@@ -5411,7 +6533,7 @@ def run_scan(args: argparse.Namespace) -> None:
             else:
                 def stage_metric(row: dict[str, object]) -> float:
                     if args.phase == "long":
-                        metric = stable_metric(row)
+                        metric = production_stable_metric(row)
                         if metric is None:
                             raise ValueError(
                                 f"history stage is not long-stable: {family}/B{batch}/"
@@ -5479,9 +6601,10 @@ def run_refine(args: argparse.Namespace) -> None:
         raise ValueError("--max-sweeps must be positive")
     if args.resweep_top_k < 1 or args.resweep_top_k > args.top_k:
         raise ValueError("--resweep-top-k must be in [1,--top-k]")
-    if args.confirmation_iterations < MIN_DISCOVERY_ITERATIONS:
+    if args.confirmation_iterations < DEFAULT_CONFIRMATION_ITERATIONS:
         raise ValueError(
-            f"--confirmation-iterations must be at least {MIN_DISCOVERY_ITERATIONS}"
+            "--confirmation-iterations must be at least "
+            f"{DEFAULT_CONFIRMATION_ITERATIONS}"
         )
     if not 0.0 <= args.min_improvement_fraction < 1.0:
         raise ValueError("--min-improvement-fraction must be in [0,1)")
@@ -5519,6 +6642,7 @@ def run_refine(args: argparse.Namespace) -> None:
         if not path.is_file():
             raise ValueError(f"refine {label} does not exist: {path}")
     expected_identity = {
+        "binary_sha256": sha256_file(binary),
         "model_sha256": sha256_file(model_identity),
         "execution_model_sha256": sha256_file(model),
         "config_sha256": sha256_file(config),
@@ -5555,6 +6679,7 @@ def run_refine(args: argparse.Namespace) -> None:
         if value.get("requires_artifact")
     ]
     artifact_evidence: dict[tuple[str, int, str], dict[str, object]] = {}
+    replay_certificate_metadata: dict[str, object] | None = None
     if artifact_required:
         if not args.artifact_bundle:
             raise ValueError("refinement of AOT candidates requires --artifact-bundle")
@@ -5562,6 +6687,19 @@ def run_refine(args: argparse.Namespace) -> None:
             pathlib.Path(args.artifact_bundle).resolve(),
             space_path=space_path, space=space, binary=binary,
             required=artifact_required,
+        )
+        if not args.linked_aot_replay_certificate:
+            raise ValueError(
+                "refinement of AOT candidates requires "
+                "--linked-aot-replay-certificate"
+            )
+        replay_evidence, replay_certificate_metadata = (
+            validate_linked_aot_replay_certificate(
+                pathlib.Path(args.linked_aot_replay_certificate).resolve(),
+                space_path=space_path, space=space, binary=binary,
+                model=model, model_identity=model_identity, config=config,
+                streams=int(space["streams"]), required=artifact_required,
+            )
         )
 
     source_sha256 = sha256_file(discovery_path)
@@ -5577,6 +6715,7 @@ def run_refine(args: argparse.Namespace) -> None:
         metadata = previous.get("refinement", {})
         if (
             isinstance(metadata, dict) and
+            metadata.get("schema") == 2 and
             metadata.get("source_discovery_sha256") == source_sha256 and
             metadata.get("top_k") == args.top_k and
             metadata.get("iterations") == args.iterations and
@@ -5586,13 +6725,16 @@ def run_refine(args: argparse.Namespace) -> None:
                 metadata.get("max_sweeps"), args.max_sweeps,
             ) and
             metadata.get("resweep_top_k") == args.resweep_top_k and
-            # A checkpoint written before adaptive ABBA was added still has
-            # valid broad-scan rows. Reuse those exact command matches and add
-            # confirmation evidence only at the decision boundary.
-            metadata.get("confirmation_iterations") in (
-                None, args.confirmation_iterations,
+            metadata.get("confirmation_iterations") == (
+                args.confirmation_iterations
             ) and
-            previous.get("space_sha256") == sha256_file(space_path)
+            metadata.get("confirmation_order") == list(CONFIRMATION_ORDER) and
+            metadata.get("min_improvement_fraction") == (
+                args.min_improvement_fraction
+            ) and
+            previous.get("space_sha256") == sha256_file(space_path) and
+            previous.get("linked_aot_replay_certificate") ==
+                replay_certificate_metadata
         ):
             refinement_rows = [
                 row for row in previous.get("rows", [])
@@ -5628,8 +6770,11 @@ def run_refine(args: argparse.Namespace) -> None:
         payload["rows"] = canonical_refinement_rows(
             base_rows, refinement_rows,
         )
+        payload["linked_aot_replay_certificate"] = (
+            replay_certificate_metadata
+        )
         payload["refinement"] = {
-            "schema": 1,
+            "schema": 2,
             "complete": complete,
             "source_discovery": str(discovery_path),
             "source_discovery_sha256": source_sha256,
@@ -5641,6 +6786,10 @@ def run_refine(args: argparse.Namespace) -> None:
             "max_sweeps": args.max_sweeps,
             "resweep_top_k": args.resweep_top_k,
             "confirmation_iterations": args.confirmation_iterations,
+            "confirmation_order": list(CONFIRMATION_ORDER),
+            "confirmation_design": "ABBA-BAAB_adjacent_pairs",
+            "confirmation_confidence_level": CONFIRMATION_CONFIDENCE_LEVEL,
+            "minimum_confirmation_pairs": MIN_CONFIRMATION_PAIRS,
             "min_improvement_fraction": args.min_improvement_fraction,
             "implementation_identity": workflow_implementation_identity(),
         }
@@ -5675,7 +6824,17 @@ def run_refine(args: argparse.Namespace) -> None:
                 raise ValueError(
                     f"first pass has {len(winners)} winners for {family}/B{batch}"
                 )
-            selected[family] = expected[str(winners[0]["candidate_id"])]
+            # Discovery ranks the candidate set but does not grant production
+            # acceptance.  Start the confirmation search from the explicit
+            # keep control so an unpaired first-pass mean can never become the
+            # incumbent merely by surviving a later sweep.
+            keep_id = f"{family}-keep-incumbent"
+            if keep_id not in expected:
+                raise ValueError(
+                    f"refinement search space has no keep control: "
+                    f"{family}/B{batch}/{keep_id}"
+                )
+            selected[family] = expected[keep_id]
 
         seed_ids = positive_history_seed_candidate_ids(
             architecture, gpu_class, batch,
@@ -5692,6 +6851,13 @@ def run_refine(args: argparse.Namespace) -> None:
                     f"space: {family}/B{batch}/{candidate_id}"
                 )
             selected[family] = expected[candidate_id]
+
+        selection_origin_confirmations: dict[
+            str, dict[str, object] | None
+        ] = {family: None for family in families}
+        selection_decision_history: dict[
+            str, list[dict[str, object]]
+        ] = {family: [] for family in families}
 
         completed_sweeps = 0
         for sweep in range(1, args.max_sweeps + 1):
@@ -5724,6 +6890,18 @@ def run_refine(args: argparse.Namespace) -> None:
                             args.min_improvement_fraction
                         ),
                     )
+                    for retained_row in (*base_rows, *refinement_rows):
+                        if (
+                            retained_row.get("family") == family and
+                            int(retained_row.get("batch", -1)) == batch and
+                            str(retained_row.get("candidate_id")) == incumbent_id
+                        ):
+                            origin = selection_origin_confirmations[family]
+                            if origin is not None:
+                                retained_row["selection_origin_confirmation"] = origin
+                            retained_row["selection_decision_history"] = list(
+                                selection_decision_history[family]
+                            )
                     print(
                         f"refine {family} B{batch}: skipped because the "
                         "current joint boundary explicitly supersedes it "
@@ -5906,9 +7084,12 @@ def run_refine(args: argparse.Namespace) -> None:
                         "finished_utc": utc_now(),
                         "binary_sha256": binary_sha256,
                         "config_sha256": sha256_file(config),
-                        "correctness": artifact_evidence.get(
-                            (family, batch, candidate_id), {}
-                        ).get("correctness", value.get("correctness")),
+                        "correctness": replay_evidence.get(
+                            (family, batch, candidate_id),
+                            artifact_evidence.get(
+                                (family, batch, candidate_id), {}
+                            ).get("correctness", value.get("correctness")),
+                        ),
                         "runs": run_records,
                         **summarize_samples(
                             samples, iterations=args.iterations,
@@ -5943,6 +7124,12 @@ def run_refine(args: argparse.Namespace) -> None:
                         f"once: {family}/B{batch}/{incumbent_id}"
                     )
                 incumbent = incumbent_rows[0]
+                # A reused broad-scan row may carry the latest decision from a
+                # prior sweep/checkpoint.  Only the current boundary may own
+                # selection_confirmation; durable provenance is kept
+                # separately in selection_origin_confirmation/history.
+                for stage_row in stage_rows:
+                    stage_row.pop("selection_confirmation", None)
                 provisional = max(
                     stage_rows,
                     key=lambda row: (
@@ -5962,117 +7149,44 @@ def run_refine(args: argparse.Namespace) -> None:
                     provisional.get("candidate_id") != incumbent_id and
                     float(provisional["nn_evals_per_sec_median"]) >= required
                 ):
-                    pair_rows = {
-                        "incumbent": incumbent,
-                        "challenger": provisional,
-                    }
-                    pair_samples: dict[str, list[float]] = {
-                        "incumbent": [], "challenger": [],
-                    }
-                    pair_runs: list[dict[str, object]] = []
-                    for sequence, label in enumerate((
-                        "incumbent", "challenger", "challenger", "incumbent",
-                    )):
-                        pair_row = pair_rows[label]
-                        confirm_command = list(pair_row["command"])
-                        iterations_index = confirm_command.index("-iterations") + 1
-                        confirm_command[iterations_index] = str(
-                            args.confirmation_iterations
+                    try:
+                        confirmation = _run_paired_selection_confirmation(
+                            {"incumbent": incumbent, "challenger": provisional},
+                            confirmation_iterations=args.confirmation_iterations,
+                            warmup=args.warmup,
+                            min_improvement_fraction=(
+                                args.min_improvement_fraction
+                            ),
+                            max_attempts=args.max_attempts,
+                            timeout_seconds=args.timeout_seconds,
+                            device=device,
+                            raw_dir=raw_dir,
+                            stem_prefix=(
+                                f"confirm-s{sweep}-{family}-b{batch}"
+                            ),
+                            failure_context=(
+                                f"{family}/B{batch}/sweep{sweep}"
+                            ),
                         )
-                        completed = None
-                        stdout_path = None
-                        stderr_path = None
-                        occupancy_evidence: dict[str, object] = {}
-                        attempt_records: list[dict[str, object]] = []
-                        for attempt in range(args.max_attempts):
-                            completed, timed_out, occupancy_evidence = (
-                                _run_benchmark_with_occupancy(
-                                    confirm_command, device=device,
-                                    timeout=args.timeout_seconds,
-                                )
-                            )
-                            stem = re.sub(
-                                r"[^A-Za-z0-9_.-]+", "_",
-                                f"confirm-s{sweep}-{family}-b{batch}-"
-                                f"{label}-q{sequence}-a{attempt}",
-                            )
-                            stdout_path = raw_dir / f"{stem}.out"
-                            stderr_path = raw_dir / f"{stem}.err"
-                            stdout_path.write_text(
-                                completed.stdout, encoding="utf-8",
-                            )
-                            stderr_path.write_text(
-                                completed.stderr, encoding="utf-8",
-                            )
-                            attempt_records.append({
-                                "attempt": attempt,
-                                "returncode": completed.returncode,
-                                "timed_out": timed_out,
-                                "stdout": str(stdout_path),
-                                "stderr": str(stderr_path),
-                                "gpu_occupancy": occupancy_evidence,
-                            })
-                            if completed.returncode == 0:
-                                break
-                        assert completed is not None
-                        assert stdout_path is not None
-                        assert stderr_path is not None
-                        if completed.returncode != 0:
-                            write_checkpoint(False)
-                            raise RuntimeError(
-                                f"ABBA confirmation failed for {family}/B{batch}/"
-                                f"{label}; see {stderr_path}"
-                            )
-                        throughput = result_metric(
-                            _parse_benchmark_record(completed.stdout)
-                        )
-                        pair_samples[label].append(throughput)
-                        pair_runs.append({
-                            "sequence": sequence,
-                            "label": label,
-                            "candidate_id": pair_row["candidate_id"],
-                            "throughput": throughput,
-                            "command": confirm_command,
-                            "stdout": str(stdout_path),
-                            "stderr": str(stderr_path),
-                            "attempts": attempt_records,
-                            "gpu_occupancy": occupancy_evidence,
-                        })
-                    incumbent_selection_metric = statistics.mean(
-                        pair_samples["incumbent"]
+                    except Exception:
+                        write_checkpoint(False)
+                        raise
+                    incumbent_selection_metric = float(
+                        confirmation["incumbent_mean_nn_evals_per_sec"]
                     )
-                    challenger_selection_metric = statistics.mean(
-                        pair_samples["challenger"]
+                    challenger_selection_metric = float(
+                        confirmation["challenger_mean_nn_evals_per_sec"]
                     )
-                    confirmation = {
-                        "schema": 1,
-                        "order": [
-                            "incumbent", "challenger", "challenger", "incumbent",
-                        ],
-                        "iterations": args.confirmation_iterations,
-                        "warmup": args.warmup,
-                        "incumbent_candidate_id": incumbent_id,
-                        "challenger_candidate_id": provisional["candidate_id"],
-                        "incumbent_samples": pair_samples["incumbent"],
-                        "challenger_samples": pair_samples["challenger"],
-                        "incumbent_mean_nn_evals_per_sec": (
-                            incumbent_selection_metric
-                        ),
-                        "challenger_mean_nn_evals_per_sec": (
-                            challenger_selection_metric
-                        ),
-                        "runs": pair_runs,
-                    }
                     incumbent["selection_confirmation"] = confirmation
                     provisional["selection_confirmation"] = confirmation
-                    if challenger_selection_metric >= (
-                        incumbent_selection_metric *
-                        (1.0 + args.min_improvement_fraction)
-                    ):
+                    selection_decision_history[family].append(confirmation)
+                    if confirmation["accepted"] is True:
                         best = provisional
                         best_selection_metric = challenger_selection_metric
+                        selection_origin_confirmations[family] = confirmation
                     else:
                         best_selection_metric = incumbent_selection_metric
+                    confirmation_statistics = confirmation["statistics"]
                     print(json.dumps({
                         "refinement_confirmation": family,
                         "batch": batch,
@@ -6081,6 +7195,19 @@ def run_refine(args: argparse.Namespace) -> None:
                         "challenger": provisional["candidate_id"],
                         "incumbent_mean": incumbent_selection_metric,
                         "challenger_mean": challenger_selection_metric,
+                        "paired_geometric_improvement_fraction": (
+                            confirmation_statistics[
+                                "geometric_mean_improvement_fraction"
+                            ]
+                        ),
+                        "paired_lower_confidence_bound_fraction": (
+                            confirmation_statistics[
+                                "lower_confidence_bound_improvement_fraction"
+                            ]
+                        ),
+                        "direction_consistent": confirmation_statistics[
+                            "direction_consistent"
+                        ],
                         "accepted": best is provisional,
                     }), flush=True)
                 for row in refinement_rows:
@@ -6113,9 +7240,31 @@ def run_refine(args: argparse.Namespace) -> None:
                 best["history_min_improvement_fraction"] = (
                     args.min_improvement_fraction
                 )
-                best["history_improvement_fraction_vs_incumbent"] = (
-                    float(best_selection_metric) /
-                    float(incumbent_selection_metric) - 1.0
+                if winner_id == incumbent_id:
+                    best["history_improvement_fraction_vs_incumbent"] = 0.0
+                else:
+                    accepted_confirmation = best.get("selection_confirmation")
+                    accepted_statistics = (
+                        accepted_confirmation.get("statistics", {})
+                        if isinstance(accepted_confirmation, dict) else {}
+                    )
+                    paired_gain = accepted_statistics.get(
+                        "geometric_mean_improvement_fraction"
+                    )
+                    if not isinstance(paired_gain, (int, float)):
+                        raise ValueError(
+                            "accepted refinement winner lacks paired effect size"
+                        )
+                    best["history_improvement_fraction_vs_incumbent"] = float(
+                        paired_gain
+                    )
+                origin_confirmation = selection_origin_confirmations[family]
+                if origin_confirmation is not None:
+                    best["selection_origin_confirmation"] = origin_confirmation
+                else:
+                    best.pop("selection_origin_confirmation", None)
+                best["selection_decision_history"] = list(
+                    selection_decision_history[family]
                 )
                 best["history_final_joint"] = family_index + 1 == len(families)
                 write_checkpoint(False)
@@ -6147,10 +7296,13 @@ def run_refine(args: argparse.Namespace) -> None:
 
 def run_gate(args: argparse.Namespace) -> None:
     """Long-stability gate for the final accumulated discovery winner."""
-    if args.iterations < MIN_LONG_ITERATIONS or args.repeats < MIN_STABLE_SAMPLES:
+    if (
+        args.iterations < MIN_LONG_ITERATIONS or
+        args.repeats < MIN_PRODUCTION_STABLE_SAMPLES
+    ):
         raise ValueError(
             f"gate requires at least {MIN_LONG_ITERATIONS} iterations and "
-            f"{MIN_STABLE_SAMPLES} repeats"
+            f"{MIN_PRODUCTION_STABLE_SAMPLES} repeats"
         )
     if args.max_attempts < 1:
         raise ValueError("--max-attempts must be positive")
@@ -6212,6 +7364,23 @@ def run_gate(args: argparse.Namespace) -> None:
                 raise ValueError(
                     f"discovery has {len(winners)} history winners for {family}/B{batch}"
                 )
+            selection_error = selection_confirmation_error(winners[0])
+            origin_error = selection_origin_confirmation_error(
+                winners[0], family=family,
+                trusted_seed_id=positive_history_seed_candidate_ids(
+                    architecture, gpu_class, batch,
+                ).get(family),
+            )
+            if selection_error is not None:
+                raise ValueError(
+                    f"discovery winner lacks production selection evidence for "
+                    f"{family}/B{batch}: {selection_error}"
+                )
+            if origin_error is not None:
+                raise ValueError(
+                    f"discovery winner lacks production origin evidence for "
+                    f"{family}/B{batch}: {origin_error}"
+                )
             winner_id = str(winners[0]["candidate_id"])
             selected_for_batch[family] = expected[winner_id]
         effective_for_batch, _, _, overridden_by = resolve_candidate_config_state(
@@ -6252,12 +7421,26 @@ def run_gate(args: argparse.Namespace) -> None:
             raise ValueError(f"gate {label} does not exist: {path}")
     artifact_evidence: dict[tuple[str, int, str], dict[str, object]] = {}
     artifact_bundle_metadata: dict[str, object] | None = None
+    replay_certificate_metadata: dict[str, object] | None = None
     if selected_aot:
         if not args.artifact_bundle:
             raise ValueError("selected final tactics require --artifact-bundle")
         artifact_evidence, artifact_bundle_metadata = validate_artifact_bundle(
             pathlib.Path(args.artifact_bundle).resolve(),
             space_path=space_path, space=space, binary=binary, required=selected_aot,
+        )
+        if not args.linked_aot_replay_certificate:
+            raise ValueError(
+                "selected final AOT tactics require "
+                "--linked-aot-replay-certificate"
+            )
+        _, replay_certificate_metadata = (
+            validate_linked_aot_replay_certificate(
+                pathlib.Path(args.linked_aot_replay_certificate).resolve(),
+                space_path=space_path, space=space, binary=binary,
+                model=model, model_identity=model_identity, config=config,
+                streams=streams, required=selected_aot,
+            )
         )
 
     output = pathlib.Path(args.output).resolve()
@@ -6357,6 +7540,12 @@ def run_gate(args: argparse.Namespace) -> None:
                 "history_improvement_fraction_vs_incumbent"
             ),
             "discovery_result": str(discovery_path),
+            # The admission certificate proves each selected linked AOT tactic
+            # independently. It must not be promoted to evidence for the whole
+            # accumulated graph. `certify` attaches a fresh comparison only
+            # after the final joint overrides are replayed against FP32.
+            "correctness": None,
+            "correctness_status": "pending_final_joint_fp32_replay",
             "runs": run_records,
             **summarize_samples(
                 samples, iterations=args.iterations, warmup=args.warmup,
@@ -6364,7 +7553,7 @@ def run_gate(args: argparse.Namespace) -> None:
             ),
         })
         rows.append(row)
-        metric = stable_metric(row)
+        metric = production_stable_metric(row)
         if metric is None:
             raise RuntimeError(
                 f"final joint B{batch} did not pass the long-stability gate"
@@ -6377,7 +7566,8 @@ def run_gate(args: argparse.Namespace) -> None:
     args.override_config = ""
     _write_scan_payload(
         output, space_path, space, architecture, gpu_class, device, streams,
-        args, started, provenance, artifact_bundle_metadata, rows,
+        args, started, provenance, artifact_bundle_metadata,
+        replay_certificate_metadata, rows,
         device_properties, implementation_identity,
     )
     print(json.dumps({"output": str(output), "rows": len(rows)}))
@@ -6395,6 +7585,7 @@ def _write_scan_payload(
     started: str,
     provenance: dict[str, object],
     artifact_bundle_metadata: dict[str, object] | None,
+    replay_certificate_metadata: dict[str, object] | None,
     rows: list[dict[str, object]],
     device_properties: dict[str, object] | None,
     implementation_identity: dict[str, object],
@@ -6408,6 +7599,10 @@ def _write_scan_payload(
         # The compressed source model remains the portable identity while an
         # equivalent uncompressed copy may be used to avoid repeated inflate
         # cost in thousands of short-lived discovery subprocesses.
+        "binary_sha256": (
+            sha256_file(pathlib.Path(args.binary).resolve())
+            if pathlib.Path(args.binary).resolve().is_file() else None
+        ),
         "model_sha256": (
             sha256_file(identity_model_path) if identity_model_path.is_file() else None
         ),
@@ -6472,6 +7667,7 @@ def _write_scan_payload(
             "override_config": args.override_config or "",
         },
         "artifact_bundle": artifact_bundle_metadata,
+        "linked_aot_replay_certificate": replay_certificate_metadata,
         "implementation_identity": implementation_identity,
         "cuda_device_capabilities": cuda_device_capabilities,
         "cuda_device_properties_at_scan_start": device_properties,
@@ -6880,7 +8076,9 @@ def build_parser() -> argparse.ArgumentParser:
     prescan.add_argument("--model", required=True)
     prescan.add_argument("--iterations", type=int, default=200)
     prescan.add_argument("--warmup", type=int, default=50)
-    prescan.add_argument("--repeats", type=int, default=2)
+    prescan.add_argument(
+        "--repeats", type=int, default=MIN_PRODUCTION_STABLE_SAMPLES,
+    )
     prescan.add_argument("--max-attempts", type=int, default=2)
     prescan.add_argument("--timeout-seconds", type=float, default=120.0)
     prescan.add_argument(
@@ -6927,7 +8125,9 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--phase", choices=("discovery", "long"), default="long")
     scan.add_argument("--iterations", type=int, default=MIN_LONG_ITERATIONS)
     scan.add_argument("--warmup", type=int, default=50)
-    scan.add_argument("--repeats", type=int, default=MIN_STABLE_SAMPLES)
+    scan.add_argument(
+        "--repeats", type=int, default=MIN_PRODUCTION_STABLE_SAMPLES,
+    )
     scan.add_argument("--max-attempts", type=int, default=2)
     scan.add_argument(
         "--timeout-seconds", type=float, default=60.0,
@@ -6939,7 +8139,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_MIN_DISCOVERY_IMPROVEMENT_FRACTION,
         help=(
             "retain the measured incumbent unless a candidate exceeds it by "
-            "this fraction (default: 0.001)"
+            "this fraction (default: 0.005)"
         ),
     )
     scan.add_argument("--override-config")
@@ -6949,6 +8149,13 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument(
         "--artifact-bundle",
         help="complete generation/link manifest whose binary hash matches --binary",
+    )
+    scan.add_argument(
+        "--linked-aot-replay-certificate",
+        help=(
+            "completed linked B/S 8192-row all-head replay certificate for "
+            "every AOT candidate"
+        ),
     )
     scan.set_defaults(function=run_scan)
 
@@ -6969,7 +8176,10 @@ def build_parser() -> argparse.ArgumentParser:
     refine.add_argument("--top-k", type=int, default=10)
     refine.add_argument("--max-sweeps", type=int, default=3)
     refine.add_argument("--resweep-top-k", type=int, default=3)
-    refine.add_argument("--confirmation-iterations", type=int, default=300)
+    refine.add_argument(
+        "--confirmation-iterations", type=int,
+        default=DEFAULT_CONFIRMATION_ITERATIONS,
+    )
     refine.add_argument("--iterations", type=int, default=MIN_DISCOVERY_ITERATIONS)
     refine.add_argument("--warmup", type=int, default=MIN_DISCOVERY_WARMUP)
     refine.add_argument("--repeats", type=int, default=1)
@@ -6986,6 +8196,7 @@ def build_parser() -> argparse.ArgumentParser:
     refine.add_argument("--runner")
     refine.add_argument("--resume", action="store_true")
     refine.add_argument("--artifact-bundle")
+    refine.add_argument("--linked-aot-replay-certificate")
     refine.set_defaults(function=run_refine)
 
     gate = sub.add_parser(
@@ -7006,7 +8217,9 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--batches")
     gate.add_argument("--iterations", type=int, default=MIN_LONG_ITERATIONS)
     gate.add_argument("--warmup", type=int, default=50)
-    gate.add_argument("--repeats", type=int, default=MIN_STABLE_SAMPLES)
+    gate.add_argument(
+        "--repeats", type=int, default=MIN_PRODUCTION_STABLE_SAMPLES,
+    )
     gate.add_argument("--max-attempts", type=int, default=2)
     gate.add_argument(
         "--timeout-seconds", type=float, default=60.0,
@@ -7015,6 +8228,7 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--max-relative-spread", type=float, default=DEFAULT_MAX_RELATIVE_SPREAD)
     gate.add_argument("--runner", help="optional command prefix, parsed with shlex")
     gate.add_argument("--artifact-bundle")
+    gate.add_argument("--linked-aot-replay-certificate")
     gate.set_defaults(function=run_gate)
 
     plan = sub.add_parser("plan", help="select stable long winners and write a portable plan")

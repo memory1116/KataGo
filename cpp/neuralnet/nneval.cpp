@@ -1095,6 +1095,8 @@ NNEvalBenchmarkResult NNEvaluator::benchmarkPureForward(
   result.perServerNNEvalsPerSec.assign(numServerThreads, 0.0);
   result.combinedWallSeconds = 0.0;
   result.combinedNNEvalsPerSec = 0.0;
+  result.timedWallSeconds = 0.0;
+  result.aggregateWallNNEvalsPerSec = 0.0;
   result.actualWallSeconds = 0.0;
   result.actualWallPerForwardMs = 0.0;
 
@@ -1109,6 +1111,8 @@ NNEvalBenchmarkResult NNEvaluator::benchmarkPureForward(
     phaseBarrier = std::make_unique<BenchmarkForwardBarrier>(numServerThreads);
   std::chrono::steady_clock::time_point wallStart;
   std::chrono::steady_clock::time_point wallEnd;
+  std::vector<std::chrono::steady_clock::time_point> perServerTimedWallStart(numServerThreads);
+  std::vector<std::chrono::steady_clock::time_point> perServerTimedWallEnd(numServerThreads);
 
   std::vector<std::thread> threads;
   threads.reserve(numServerThreads);
@@ -1184,7 +1188,8 @@ NNEvalBenchmarkResult NNEvaluator::benchmarkPureForward(
 #if defined(USE_CUDA_BACKEND) || defined(USE_TENSORRT_BACKEND)
           if(!NeuralNet::benchmarkOutput(
                handle, serverBuf.inputBuffers, batchSize, numWarmups, numIterations, times,
-               phaseBarrier.get(), threadIdx, phaseOffsetMicros
+               phaseBarrier.get(), threadIdx, phaseOffsetMicros,
+               perServerTimedWallStart[threadIdx], perServerTimedWallEnd[threadIdx]
              )) {
             throw StringError("Current backend does not support pure-device benchmarknn");
           }
@@ -1224,6 +1229,18 @@ NNEvalBenchmarkResult NNEvaluator::benchmarkPureForward(
   result.actualWallSeconds = std::chrono::duration<double>(wallEnd - wallStart).count();
   result.actualWallPerForwardMs =
     result.actualWallSeconds / (double)(numWarmups + numIterations) * 1000.0;
+
+  const std::chrono::steady_clock::time_point timedWallStart =
+    *std::min_element(perServerTimedWallStart.begin(), perServerTimedWallStart.end());
+  const std::chrono::steady_clock::time_point timedWallEnd =
+    *std::max_element(perServerTimedWallEnd.begin(), perServerTimedWallEnd.end());
+  result.timedWallSeconds =
+    std::chrono::duration<double>(timedWallEnd - timedWallStart).count();
+  if(result.timedWallSeconds <= 0.0)
+    throw StringError("benchmarknn: nonpositive timed wall interval");
+  result.aggregateWallNNEvalsPerSec =
+    (double)numServerThreads * (double)batchSize * (double)numIterations /
+    result.timedWallSeconds;
 
   double combinedNNEvalsPerSec = 0.0;
   double maxMedianSeconds = 0.0;

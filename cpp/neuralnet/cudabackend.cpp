@@ -4170,6 +4170,10 @@ struct ComputeContext {
   enabled_t useNHWCMode;
   // If true, skip the cudnn graph SDPA path entirely and always use the custom attention kernel.
   bool cudaDisableGraphSDPA;
+  // Capture only the device-compute portion of the ordinary synchronous inference path.
+  // A separate graph is cached for every observed batch size, so this does not pad or
+  // otherwise alter search batching.
+  bool cudaUseGraphInference;
   bool cudaEventPipelineUseGraph;
   // Whether 1x1 NHWC convs use the cuBLAS GEMM path. Auto = matmul iff FP16.
   enabled_t use1x1MatmulMode;
@@ -4204,6 +4208,8 @@ ComputeContext* NeuralNet::createComputeContext(
     cfg.contains("cudaUseNHWC") ? cfg.getEnabled("cudaUseNHWC") : enabled_t::Auto;
   context->cudaDisableGraphSDPA =
     cfg.contains("cudaDisableGraphSDPA") ? cfg.getBool("cudaDisableGraphSDPA") : false;
+  context->cudaUseGraphInference =
+    cfg.contains("cudaUseGraphInference") ? cfg.getBool("cudaUseGraphInference") : false;
   context->cudaEventPipelineUseGraph =
     cfg.contains("cudaEventPipelineUseGraph") ? cfg.getBool("cudaEventPipelineUseGraph") : false;
   context->use1x1MatmulMode =
@@ -4236,6 +4242,10 @@ struct ComputeHandle {
   const bool requireExactNNLen;
   const bool inputsUseNHWC;
   const bool usingNHWC;
+  const bool useGraphInference;
+  const int graphInferenceMaxBatchSize;
+  std::vector<cudaGraph_t> graphInferenceGraphs;
+  std::vector<cudaGraphExec_t> graphInferenceGraphExecs;
   const bool eventPipelineUseGraph;
   const int eventPipelineBatchSize;
   bool eventPipelineEnabled;
@@ -4273,6 +4283,10 @@ struct ComputeHandle {
     requireExactNNLen(requireExactNNLen_),
     inputsUseNHWC(inputsUseNHWC_),
     usingNHWC(useNHWC),
+    useGraphInference(context->cudaUseGraphInference),
+    graphInferenceMaxBatchSize(maxBatchSize),
+    graphInferenceGraphs(maxBatchSize+1,NULL),
+    graphInferenceGraphExecs(maxBatchSize+1,NULL),
     eventPipelineUseGraph(context->cudaEventPipelineUseGraph),
     eventPipelineBatchSize(maxBatchSize),
     eventPipelineEnabled(false),
@@ -4403,6 +4417,13 @@ struct ComputeHandle {
       );
     }
 
+    if(useGraphInference) {
+      if(sm89Model == nullptr)
+        throw StringError("cudaUseGraphInference currently requires the SM89 custom backend");
+      if(!usingFP16)
+        throw StringError("cudaUseGraphInference currently requires FP16 inference");
+    }
+
     //Synchronize after creating buffers and copying all the weights, just in case
     CUDA_ERR("ComputeHandle", cudaStreamSynchronize(cudaHandles->stream));
   }
@@ -4410,6 +4431,23 @@ struct ComputeHandle {
     // All following members own device resources, so destroy them with their
     // device current even when the scheduler thread last touched another GPU.
     (void)cudaSetDevice(gpuIdx);
+    bool hasGraphInferenceExec = false;
+    for(cudaGraphExec_t graphExec: graphInferenceGraphExecs) {
+      if(graphExec != NULL) {
+        hasGraphInferenceExec = true;
+        break;
+      }
+    }
+    if(hasGraphInferenceExec)
+      cudaStreamSynchronize(cudaHandles->stream);
+    for(cudaGraphExec_t graphExec: graphInferenceGraphExecs) {
+      if(graphExec != NULL)
+        cudaGraphExecDestroy(graphExec);
+    }
+    for(cudaGraph_t graph: graphInferenceGraphs) {
+      if(graph != NULL)
+        cudaGraphDestroy(graph);
+    }
     if(eventPipelineGraphExec != NULL) {
       cudaStreamSynchronize(cudaHandles->stream);
       cudaGraphExecDestroy(eventPipelineGraphExec);
@@ -4529,6 +4567,68 @@ struct ComputeHandle {
       if(inputConsumedEvent_ != nullptr)
         CUDA_ERR("ComputeHandle::apply",cudaEventRecord(inputConsumedEvent_,cudaHandles_->stream));
     }
+  }
+
+  // Apply the ordinary synchronous getOutput compute path, optionally replaying a
+  // graph specialized to the exact batch size. H2D input preparation and D2H output
+  // copies deliberately remain outside the graph, preserving their existing sizes
+  // and the search server's batching decisions.
+  void applyForSynchronousOutput(int batchSize) {
+    testAssert(batchSize > 0 && batchSize <= graphInferenceMaxBatchSize);
+    Buffers* buffers_ = buffers.get();
+    auto enqueueCompute = [&]() {
+      apply(
+        cudaHandles.get(),scratch.get(),batchSize,requireExactNNLen,
+        buffers_->inputBuf,buffers_->inputGlobalBuf,buffers_->inputMetaBuf,
+        buffers_->policyPassBuf,buffers_->policyBuf,
+        buffers_->valueBuf,buffers_->scoreValueBuf,buffers_->ownershipBuf,
+        buffers_->workspaceBuf,buffers_->workspaceBytes
+      );
+    };
+
+    if(!useGraphInference) {
+      enqueueCompute();
+      return;
+    }
+
+    cudaGraphExec_t& graphExec = graphInferenceGraphExecs[batchSize];
+    if(graphExec == NULL) {
+      // Batch-dependent cuDNN plans and CUTLASS operators may lazily initialize or
+      // update their problem shape. Run once outside capture before freezing launches.
+      enqueueCompute();
+      CUDA_ERR("applyForSynchronousOutput",cudaStreamSynchronize(cudaHandles->stream));
+
+      cudaGraph_t graph = NULL;
+      CUDA_ERR("applyForSynchronousOutput",cudaStreamBeginCapture(
+        cudaHandles->stream,cudaStreamCaptureModeThreadLocal
+      ));
+      try {
+        enqueueCompute();
+        CUDA_ERR("applyForSynchronousOutput",cudaStreamEndCapture(cudaHandles->stream,&graph));
+      }
+      catch(...) {
+        cudaGraph_t discardedGraph = NULL;
+        cudaStreamEndCapture(cudaHandles->stream,&discardedGraph);
+        if(discardedGraph != NULL)
+          cudaGraphDestroy(discardedGraph);
+        throw;
+      }
+
+      cudaGraphExec_t newGraphExec = NULL;
+      try {
+        CUDA_ERR("applyForSynchronousOutput",cudaGraphInstantiate(
+          &newGraphExec,graph,NULL,NULL,0
+        ));
+      }
+      catch(...) {
+        cudaGraphDestroy(graph);
+        throw;
+      }
+      graphInferenceGraphs[batchSize] = graph;
+      graphExec = newGraphExec;
+    }
+
+    CUDA_ERR("applyForSynchronousOutput",cudaGraphLaunch(graphExec,cudaHandles->stream));
   }
 
   ComputeHandle() = delete;
@@ -4654,6 +4754,12 @@ ComputeHandle* NeuralNet::createComputeHandle(
   );
   gpuHandle->cudaHandles->logger = logger;
   gpuHandle->cudaHandles->cudaDisableGraphSDPA = context->cudaDisableGraphSDPA;
+  if(logger != NULL && context->cudaUseGraphInference) {
+    logger->write(
+      "Cuda backend thread " + Global::intToString(serverThreadIdx) +
+      ": cudaUseGraphInference = true (per-batch compute-only CUDA graphs)"
+    );
+  }
   if(gpuHandle->sm120Model != nullptr)
     gpuHandle->sm120Model->setLogger(logger);
   if(gpuHandle->sm89Model != nullptr)
@@ -5217,7 +5323,6 @@ void NeuralNet::getOutput(
   prepareHostInput(gpuHandle,inputBuffers,batchSize,inputBufs);
 
   Buffers* buffers = gpuHandle->buffers.get();
-  ScratchBuffers* scratch = gpuHandle->scratch.get();
   CudaHandles* cudaHandles = gpuHandle->cudaHandles.get();
 
   if(!gpuHandle->usingFP16) {
@@ -5282,26 +5387,7 @@ void NeuralNet::getOutput(
     }
   }
 
-  gpuHandle->apply(
-    gpuHandle->cudaHandles.get(),
-    scratch,
-    batchSize,
-    gpuHandle->requireExactNNLen,
-
-    buffers->inputBuf,
-    buffers->inputGlobalBuf,
-    buffers->inputMetaBuf,
-
-    buffers->policyPassBuf,
-    buffers->policyBuf,
-
-    buffers->valueBuf,
-    buffers->scoreValueBuf,
-    buffers->ownershipBuf,
-
-    buffers->workspaceBuf,
-    buffers->workspaceBytes
-  );
+  gpuHandle->applyForSynchronousOutput(batchSize);
 
   CUDA_ERR("getOutput",cudaMemcpyAsync(inputBuffers->policyPassResults, buffers->policyPassBuf, inputBuffers->singlePolicyPassResultBytes*batchSize, cudaMemcpyDeviceToHost, cudaHandles->stream));
   CUDA_ERR("getOutput",cudaMemcpyAsync(inputBuffers->policyResults, buffers->policyBuf, inputBuffers->singlePolicyResultBytes*batchSize, cudaMemcpyDeviceToHost, cudaHandles->stream));
@@ -5470,7 +5556,9 @@ bool NeuralNet::benchmarkOutput(
   vector<double>& iterationSeconds,
   BenchmarkForwardBarrier* phaseBarrier,
   int serverThreadIdx,
-  int phaseOffsetMicros
+  int phaseOffsetMicros,
+  std::chrono::steady_clock::time_point& timedWallStart,
+  std::chrono::steady_clock::time_point& timedWallEnd
 ) {
   assert(batchSize > 0 && batchSize <= inputBuffers->maxBatchSize);
   if(numWarmups < 0 || numIterations <= 0)
@@ -5514,6 +5602,7 @@ bool NeuralNet::benchmarkOutput(
   if(phaseBarrier != NULL)
     phaseBarrier->arriveAndWait(serverThreadIdx,phaseOffsetMicros);
 
+  timedWallStart = std::chrono::steady_clock::now();
   try {
     for(int i = 0; i < numIterations; i++) {
       CUDA_ERR("benchmarkOutput",cudaEventRecord(startEvents[i], gpuHandle->cudaHandles->stream));
@@ -5536,6 +5625,7 @@ bool NeuralNet::benchmarkOutput(
       CUDA_ERR("benchmarkOutput",cudaEventRecord(endEvents[i], gpuHandle->cudaHandles->stream));
     }
     CUDA_ERR("benchmarkOutput",cudaStreamSynchronize(gpuHandle->cudaHandles->stream));
+    timedWallEnd = std::chrono::steady_clock::now();
 
     iterationSeconds.reserve(numIterations);
     for(int i = 0; i < numIterations; i++) {

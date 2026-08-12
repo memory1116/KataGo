@@ -10,6 +10,10 @@
 
 #include <cmath>
 
+#ifndef KATAGO_SM8X_COMPILED_ARCH
+#define KATAGO_SM8X_COMPILED_ARCH 89
+#endif
+
 namespace Sm89Backend {
 namespace {
 
@@ -72,7 +76,7 @@ Flash_fwd_params makeParams(
   p.window_size_right = S - 1;
   p.num_splits = 1;
   p.pack_gqa = false;
-  p.arch = 89;
+  p.arch = KATAGO_SM8X_COMPILED_ARCH;
   p.num_sm = numSms;
   return p;
 }

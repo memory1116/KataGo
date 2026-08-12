@@ -140,25 +140,27 @@ struct Sm89DualGemmSwiGLU::Impl {
   DualGemmSwizzle4 swizzle4Op;
   DualGemmHalf2Tanh half2TanhOp;
   const std::string tactic;
-  bool initialized;
+  int initializedTokens;
 
   Impl(const half* weights_, const std::string& tactic_)
     : weights(weights_), swizzle2Op(), swizzle4Op(), half2TanhOp(),
-      tactic(tactic_), initialized(false)
+      tactic(tactic_), initializedTokens(-1)
   {}
 
   template<typename Gemm>
   bool applyImpl(Gemm& gemm, const half* input, half* output, int tokens, cudaStream_t stream) {
     typename Gemm::Arguments args = makeArguments<Gemm>(weights, input, output, tokens);
     cutlass::Status status;
-    if(!initialized) {
+    // DeviceGemm::update refreshes pointers and epilogue arguments, but not
+    // the problem shape. Search inference changes M with the dynamic batch.
+    if(initializedTokens != tokens) {
       status = gemm.can_implement(args);
       if(status != cutlass::Status::kSuccess)
         return false;
       status = gemm.initialize(args, nullptr, stream);
       if(status != cutlass::Status::kSuccess)
         return false;
-      initialized = true;
+      initializedTokens = tokens;
     }
     else {
       status = gemm.update(args, nullptr);

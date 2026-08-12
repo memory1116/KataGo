@@ -30,6 +30,8 @@ struct NNEvalBenchmarkResult {
   std::vector<double> perServerNNEvalsPerSec;
   double combinedWallSeconds;
   double combinedNNEvalsPerSec;
+  double timedWallSeconds;
+  double aggregateWallNNEvalsPerSec;
   double actualWallSeconds;
   double actualWallPerForwardMs;
 };

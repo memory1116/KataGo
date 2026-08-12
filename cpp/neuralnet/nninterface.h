@@ -216,7 +216,9 @@ namespace NeuralNet {
   // populated (e.g. by one getOutput call). One-time H2D preparation is performed here before the
   // timed loop; the loop repeatedly runs the backend forward on device without H2D/D2H copies or
   // postprocessing, recording one GPU-visible elapsed time (seconds) per iteration into
-  // `iterationSeconds`. Returns false for backends that cannot run this pure-device benchmark.
+  // `iterationSeconds`. `timedWallStart` and `timedWallEnd` bound the same timed loop on the host,
+  // after warmup and before timing-event extraction/teardown. Returns false for backends that
+  // cannot run this pure-device benchmark.
   bool benchmarkOutput(
     ComputeHandle* computeHandle,
     InputBuffers* buffers,
@@ -226,7 +228,9 @@ namespace NeuralNet {
     std::vector<double>& iterationSeconds,
     BenchmarkForwardBarrier* phaseBarrier,
     int serverThreadIdx,
-    int phaseOffsetMicros
+    int phaseOffsetMicros,
+    std::chrono::steady_clock::time_point& timedWallStart,
+    std::chrono::steady_clock::time_point& timedWallEnd
   );
 
   // FOR TESTING -----------------------------------------------------------------------

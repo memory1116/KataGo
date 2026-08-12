@@ -25,8 +25,12 @@ cudaEventPipelineUseGraph = false
 
 `cudaTacticPlanBatch` may be omitted when the plan contains exactly one
 certified batch. The loader supplies `nnMaxBatchSize`, exact 19x19 shape,
-FP16/NHWC, `nnBatchAwareDispatch=true`, and all tactic overrides from that
-batch. Conflicting user settings are rejected instead of silently changed.
+all tactic overrides from that batch, and—when present—the plan's explicit
+runtime execution contract. That contract currently covers FP16, NHWC, CUDA
+Graph inference, max-batch-only warmup, and batch-aware dispatch. Conflicting
+user settings are rejected instead of silently changed. Older SM89/SM120
+plans without this field keep their legacy fixed-batch behavior; SM86 plans
+must carry the explicit contract.
 
 ## Multiple GPUs
 
@@ -53,6 +57,10 @@ An underfilled batch waits for more search requests unless its target GPU is
 completely idle. Every backend launch still has the plan's exact physical
 batch; an idle partial launch pads missing rows rather than selecting another
 kernel shape.
+
+Plans may instead certify `nnBatchAwareDispatch=false`. In that case no
+padding scheduler is enabled; this is intentional for the RTX 3080 Ti B8/S4
+plan, where strict search measurements favored the normal queue behavior.
 
 With `cudaAsyncInferPipeline=true`, each inference lane has a persistent host
 submission worker, pinned host staging, dedicated H2D and D2H streams, and one

@@ -17,6 +17,7 @@ import pathlib
 import subprocess
 import sys
 
+from cuda_tactic_workflow import nvcc_arch_flag
 from portable_fat_scan import select_tilelang_requests, write_registry
 
 
@@ -180,7 +181,7 @@ def main() -> None:
     parser.add_argument("--nvcc", default="nvcc")
     parser.add_argument(
         "--compile-objects", action=argparse.BooleanOptionalAction, default=True,
-        help="compile every generated TU for sm_89 and record the exact command/hash",
+        help="compile every generated TU for the space's exact CUDA architecture",
     )
     parser.add_argument(
         "--reuse-existing",
@@ -241,6 +242,7 @@ def main() -> None:
                 "--candidate-id", request["candidate_id"],
                 "--batch", str(request["batch"]),
                 "--device", str(args.device),
+                "--nvcc", args.nvcc,
                 "--output-dir", str(candidate_dir),
                 "--source-path", str(source_path),
                 "--fat-symbol-token", token,
@@ -262,7 +264,8 @@ def main() -> None:
             )
             object_path.parent.mkdir(parents=True, exist_ok=True)
             compile_command = [
-                args.nvcc, "-std=c++17", "-arch=sm_89", "-O3",
+                args.nvcc, "-std=c++17",
+                nvcc_arch_flag(space.get("compute_capability")), "-O3",
                 "--use_fast_math", "--expt-relaxed-constexpr",
                 "--expt-extended-lambda", "-lineinfo",
                 f"-I{tilelang_root / 'src'}",
@@ -271,7 +274,7 @@ def main() -> None:
             ]
             run_command(
                 compile_command, logs_dir / f"{index:04d}-{token}-compile",
-                "SM89 compilation",
+                f"{space.get('architecture')} compilation",
             )
         elif args.compile_objects:
             compile_command = previous.get("compile_command") if previous else None

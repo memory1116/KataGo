@@ -1,0 +1,1742 @@
+{
+  "apply": {
+    "per_batch_tactic_overrides": {
+      "8": "cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true"
+    },
+    "topology": {
+      "cudaDeviceToUseThread0": 0,
+      "cudaDeviceToUseThread1": 0,
+      "cudaDeviceToUseThread2": 0,
+      "cudaDeviceToUseThread3": 0,
+      "cudaSm89Backend": true,
+      "cudaSm89Forward": true,
+      "numNNServerThreadsPerModel": 4
+    }
+  },
+  "batches": [
+    8
+  ],
+  "coverage": {
+    "dual_ffn": {
+      "8": {
+        "expected_count": 11,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 11,
+        "stable_long_count": 0
+      }
+    },
+    "fa4": {
+      "8": {
+        "expected_count": 7,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 7,
+        "stable_long_count": 0
+      }
+    },
+    "fused_residual": {
+      "8": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "head_bn": {
+      "8": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "initial_conv": {
+      "8": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "initial_global": {
+      "8": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "l2": {
+      "8": {
+        "expected_count": 11,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 11,
+        "stable_long_count": 0
+      }
+    },
+    "linear2": {
+      "8": {
+        "expected_count": 13,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 13,
+        "stable_long_count": 0
+      }
+    },
+    "outproj": {
+      "8": {
+        "expected_count": 7,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 7,
+        "stable_long_count": 0
+      }
+    },
+    "pointwise": {
+      "8": {
+        "expected_count": 7,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 7,
+        "stable_long_count": 0
+      }
+    },
+    "policy_p1": {
+      "8": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "postconv_bn": {
+      "8": {
+        "expected_count": 12,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 12,
+        "stable_long_count": 0
+      }
+    },
+    "preconv": {
+      "8": {
+        "expected_count": 8,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 8,
+        "stable_long_count": 0
+      }
+    },
+    "qkv_rope": {
+      "8": {
+        "expected_count": 14,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 14,
+        "stable_long_count": 0
+      }
+    },
+    "rmsnorm": {
+      "8": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "value_terminal": {
+      "8": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 1
+      }
+    },
+    "weight_sharing": {
+      "8": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    },
+    "wide_head": {
+      "8": {
+        "expected_count": 4,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 4,
+        "stable_long_count": 0
+      }
+    },
+    "wide_projection": {
+      "8": {
+        "expected_count": 3,
+        "history_evidence_error": null,
+        "history_stage_winner_count": 1,
+        "invalid_status_candidate_ids": [],
+        "missing_candidate_ids": [],
+        "observed_count": 3,
+        "stable_long_count": 0
+      }
+    }
+  },
+  "families": {
+    "dual_ffn": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp",
+              "SM89 backend: runtime tactic active: cudaUseWideFFN"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaDualFfnCutlassTacticSm89": "m128-n64-k32-w64-n32-s3-sw4-exp",
+              "cudaFusedFFNAotTacticSm89": "disabled",
+              "cudaUseWideFFN": true
+            },
+            "history_family": "dual_ffn",
+            "id": "dual-cutlass-m128-n64-k32-w64-n32-s3-sw4-exp",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaDualFfnCutlassTacticSm89",
+              "cudaFusedFFNAotTacticSm89",
+              "cudaUseWideFFN"
+            ]
+          },
+          "candidate_id": "dual-cutlass-m128-n64-k32-w64-n32-s3-sw4-exp",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1440.663853,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1440.663853
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": {
+            "accepted": false,
+            "challenger_candidate_id": "dual-cutlass-m128-n64-k32-w64-n32-s3-sw2-exp",
+            "challenger_mean_nn_evals_per_sec": 1496.51432525,
+            "challenger_samples": [
+              1493.85839,
+              1500.782749,
+              1497.916077,
+              1493.500085
+            ],
+            "design": "ABBA-BAAB_adjacent_pairs",
+            "incumbent_candidate_id": "dual-cutlass-m128-n64-k32-w64-n32-s3-sw4-exp",
+            "incumbent_mean_nn_evals_per_sec": 1494.34122075,
+            "incumbent_samples": [
+              1506.435927,
+              1500.96303,
+              1475.236024,
+              1494.729902
+            ],
+            "iterations": 500,
+            "metric": "aggregate_timed_wall_nn_evals_per_sec",
+            "order": [
+              "incumbent",
+              "challenger",
+              "challenger",
+              "incumbent",
+              "challenger",
+              "incumbent",
+              "incumbent",
+              "challenger"
+            ],
+            "schema": 2,
+            "statistics": {
+              "accepted": false,
+              "confidence_level": 0.95,
+              "confidence_passed": false,
+              "direction_consistent": false,
+              "effect_size_passed": false,
+              "geometric_mean_improvement_fraction": 0.0014834469323730265,
+              "lower_confidence_bound_improvement_fraction": -0.010133712945457526,
+              "mean_log_ratio": 0.0014823477119282936,
+              "minimum_improvement_fraction": 0.005,
+              "pair_count": 4,
+              "pair_improvement_fractions": [
+                -0.008349201432713782,
+                -0.0001201102201697779,
+                0.015373847052964962,
+                -0.0008227687145045959
+              ],
+              "pair_log_ratios": [
+                -0.008384251243294486,
+                -0.00012011743397991318,
+                0.015256866899442903,
+                -0.0008231073744553298
+              ],
+              "sample_standard_deviation_log_ratio": 0.0099158151705511,
+              "standard_error_log_ratio": 0.00495790758527555,
+              "t_critical": 2.353363,
+              "test": "paired_log_ratio_one_sided_student_t"
+            },
+            "warmup": 50
+          },
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "fa4": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaFlashAttentionTacticSm89": "d32-m64-n96-w4-pack0-both16"
+            },
+            "history_family": "fa4",
+            "id": "fa4-d32-m64-n96-w4-pack0-both16",
+            "implementation": "config"
+          },
+          "candidate_id": "fa4-d32-m64-n96-w4-pack0-both16",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1491.825758,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1491.825758
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "fused_residual": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseFusedResidual"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaUseFusedResidual": true
+            },
+            "history_family": "fused_residual",
+            "id": "fused_residual-on",
+            "implementation": "config"
+          },
+          "candidate_id": "fused_residual-on",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1496.534427,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1496.534427
+          ],
+          "overridden_keys": {
+            "cudaUseFusedResidual": "linear2"
+          },
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "head_bn": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "head_bn",
+            "id": "head_bn-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "head_bn-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1509.458173,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1509.458173
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "initial_conv": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "initial_conv",
+            "id": "initial_conv-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "initial_conv-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1509.253625,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1509.253625
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "initial_global": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "initial_global",
+            "id": "initial_global-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "initial_global-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1511.420282,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1511.420282
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "l2": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "l2",
+            "id": "l2-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "l2-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1445.456334,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1445.456334
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "linear2": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1",
+              "SM89 backend: runtime tactic active: cudaUseFusedResidual"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaLinear2AotTacticSm89": "disabled",
+              "cudaLinear2CutlassTacticSm89": "m128-n128-k32-w64-n32-s3-sw1",
+              "cudaUseFusedResidual": true,
+              "cudaUseLinear2PostBNSiluSm89": false
+            },
+            "history_family": "linear2",
+            "id": "linear2-cutlass-m128-n128-k32-w64-n32-s3-sw1",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseFusedResidual"
+            ]
+          },
+          "candidate_id": "linear2-cutlass-m128-n128-k32-w64-n32-s3-sw1",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1510.426129,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1510.426129
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": {
+            "accepted": true,
+            "challenger_candidate_id": "linear2-cutlass-m128-n128-k32-w64-n32-s3-sw1",
+            "challenger_mean_nn_evals_per_sec": 1500.01725025,
+            "challenger_samples": [
+              1502.284858,
+              1501.479602,
+              1498.546965,
+              1497.757576
+            ],
+            "design": "ABBA-BAAB_adjacent_pairs",
+            "incumbent_candidate_id": "linear2-keep-incumbent",
+            "incumbent_mean_nn_evals_per_sec": 1478.0197094999999,
+            "incumbent_samples": [
+              1488.989273,
+              1479.752411,
+              1478.510153,
+              1464.827001
+            ],
+            "iterations": 500,
+            "metric": "aggregate_timed_wall_nn_evals_per_sec",
+            "order": [
+              "incumbent",
+              "challenger",
+              "challenger",
+              "incumbent",
+              "challenger",
+              "incumbent",
+              "incumbent",
+              "challenger"
+            ],
+            "schema": 2,
+            "statistics": {
+              "accepted": true,
+              "confidence_level": 0.95,
+              "confidence_passed": true,
+              "direction_consistent": true,
+              "effect_size_passed": true,
+              "geometric_mean_improvement_fraction": 0.014899606674650298,
+              "lower_confidence_bound_improvement_fraction": 0.008307568489037239,
+              "mean_log_ratio": 0.01478969792171818,
+              "minimum_improvement_fraction": 0.005,
+              "pair_count": 4,
+              "pair_improvement_fractions": [
+                0.008929268491781883,
+                0.014682990775002125,
+                0.013552028681943051,
+                0.022480862912493516
+              ],
+              "pair_log_ratios": [
+                0.008889638311516835,
+                0.014576239350736273,
+                0.013461021242947407,
+                0.022231892781672206
+              ],
+              "sample_standard_deviation_log_ratio": 0.005537987420705899,
+              "standard_error_log_ratio": 0.0027689937103529496,
+              "t_critical": 2.353363,
+              "test": "paired_log_ratio_one_sided_student_t"
+            },
+            "warmup": 50
+          },
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "outproj": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "outproj",
+            "id": "outproj-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "outproj-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1437.149439,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1437.149439
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": {
+            "accepted": false,
+            "challenger_candidate_id": "outproj-cutlass-m128-n128-k32-w64-n64-s3-sw1",
+            "challenger_mean_nn_evals_per_sec": 1497.1586565,
+            "challenger_samples": [
+              1499.735771,
+              1494.086079,
+              1498.45092,
+              1496.361856
+            ],
+            "design": "ABBA-BAAB_adjacent_pairs",
+            "incumbent_candidate_id": "outproj-keep-incumbent",
+            "incumbent_mean_nn_evals_per_sec": 1491.5440755,
+            "incumbent_samples": [
+              1489.695592,
+              1495.562003,
+              1490.277837,
+              1490.64087
+            ],
+            "iterations": 500,
+            "metric": "aggregate_timed_wall_nn_evals_per_sec",
+            "order": [
+              "incumbent",
+              "challenger",
+              "challenger",
+              "incumbent",
+              "challenger",
+              "incumbent",
+              "incumbent",
+              "challenger"
+            ],
+            "schema": 2,
+            "statistics": {
+              "accepted": false,
+              "confidence_level": 0.95,
+              "confidence_passed": false,
+              "direction_consistent": false,
+              "effect_size_passed": false,
+              "geometric_mean_improvement_fraction": 0.0037644830061380288,
+              "lower_confidence_bound_improvement_fraction": -0.0002160001752190739,
+              "mean_log_ratio": 0.003757415072510219,
+              "minimum_improvement_fraction": 0.005,
+              "pair_count": 4,
+              "pair_improvement_fractions": [
+                0.006739752103663399,
+                -0.0009868691482127767,
+                0.005484267964725786,
+                0.0038379371685952623
+              ],
+              "pair_log_ratios": [
+                0.006717141510792693,
+                -0.000987356424182083,
+                0.0054692841257988544,
+                0.00383059107763141
+              ],
+              "sample_standard_deviation_log_ratio": 0.003376817413316114,
+              "standard_error_log_ratio": 0.001688408706658057,
+              "t_critical": 2.353363,
+              "test": "paired_log_ratio_one_sided_student_t"
+            },
+            "warmup": 50
+          },
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "pointwise": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "pointwise",
+            "id": "pointwise-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "pointwise-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1510.308858,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1510.308858
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "policy_p1": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "policy_p1",
+            "id": "policy_p1-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "policy_p1-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1510.098435,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1510.098435
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "postconv_bn": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1",
+              "SM89 backend: runtime tactic active: cudaUsePostConvBNSiluSm89"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaPostConvCutlassTacticSm89": "m128-n128-k32-w64-n64-s3-sw1",
+              "cudaUsePostConvBNSiluSm89": true
+            },
+            "history_family": "postconv_bn",
+            "id": "postconv-cutlass-m128-n128-k32-w64-n64-s3-sw1-bn-silu",
+            "implementation": "config"
+          },
+          "candidate_id": "postconv-cutlass-m128-n128-k32-w64-n64-s3-sw1-bn-silu",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1492.676031,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1492.676031
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "preconv": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "preconv",
+            "id": "preconv-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "preconv-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1434.76774,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1434.76774
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": {
+            "accepted": false,
+            "challenger_candidate_id": "preconv-cutlass-m128-n128-k32-w64-n32-s3-sw1",
+            "challenger_mean_nn_evals_per_sec": 1492.50271075,
+            "challenger_samples": [
+              1491.160857,
+              1496.499659,
+              1484.22672,
+              1498.123607
+            ],
+            "design": "ABBA-BAAB_adjacent_pairs",
+            "incumbent_candidate_id": "preconv-keep-incumbent",
+            "incumbent_mean_nn_evals_per_sec": 1487.4732374999999,
+            "incumbent_samples": [
+              1496.282475,
+              1482.449007,
+              1475.02357,
+              1496.137898
+            ],
+            "iterations": 500,
+            "metric": "aggregate_timed_wall_nn_evals_per_sec",
+            "order": [
+              "incumbent",
+              "challenger",
+              "challenger",
+              "incumbent",
+              "challenger",
+              "incumbent",
+              "incumbent",
+              "challenger"
+            ],
+            "schema": 2,
+            "statistics": {
+              "accepted": false,
+              "confidence_level": 0.95,
+              "confidence_passed": false,
+              "direction_consistent": false,
+              "effect_size_passed": false,
+              "geometric_mean_improvement_fraction": 0.003393465418792754,
+              "lower_confidence_bound_improvement_fraction": -0.0032385079913949647,
+              "mean_log_ratio": 0.00338772060789459,
+              "minimum_improvement_fraction": 0.005,
+              "pair_count": 4,
+              "pair_improvement_fractions": [
+                -0.0034228951321506607,
+                0.009478000210229265,
+                0.006239324026530602,
+                0.0013272232477063994
+              ],
+              "pair_log_ratios": [
+                -0.00342876663989245,
+                0.009433365774725148,
+                0.006219940031278022,
+                0.0013263432654676403
+              ],
+              "sample_standard_deviation_log_ratio": 0.005635750979018578,
+              "standard_error_log_ratio": 0.002817875489509289,
+              "t_critical": 2.353363,
+              "test": "paired_log_ratio_one_sided_student_t"
+            },
+            "warmup": 50
+          },
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "qkv_rope": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseQKVRoPEGemmSm89",
+              "SM89 backend: runtime tactic active: cudaUseWideQKV"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaPlainQKVVariantSm89": 0,
+              "cudaRoPEBatchGroupSm89": 1,
+              "cudaUseFusedQKRoPE": false,
+              "cudaUsePrecomputedQKRoPESm89": false,
+              "cudaUseQKVRoPEGemmSm89": true,
+              "cudaUseSplitQKVRoPEGemmSm89": false,
+              "cudaUseWideQKV": true
+            },
+            "history_family": "qkv_rope",
+            "id": "qkv-rope-gemm-epilogue",
+            "implementation": "config",
+            "overrides_keys": [
+              "cudaUseQKVRoPEGemmSm89",
+              "cudaUseSplitQKVRoPEGemmSm89",
+              "cudaUseWideQKV"
+            ]
+          },
+          "candidate_id": "qkv-rope-gemm-epilogue",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1499.076428,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1499.076428
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "rmsnorm": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseRMSNormOpt"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaRMSNormRowsPerBlockSm89": 4,
+              "cudaUseRMSNormOpt": true
+            },
+            "history_family": "rmsnorm",
+            "id": "rmsnorm-warps4",
+            "implementation": "config"
+          },
+          "candidate_id": "rmsnorm-warps4",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1441.304829,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1441.304829
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": {
+            "accepted": false,
+            "challenger_candidate_id": "rmsnorm-warps8",
+            "challenger_mean_nn_evals_per_sec": 1495.03104475,
+            "challenger_samples": [
+              1491.591086,
+              1497.131408,
+              1494.437606,
+              1496.964079
+            ],
+            "design": "ABBA-BAAB_adjacent_pairs",
+            "incumbent_candidate_id": "rmsnorm-warps4",
+            "incumbent_mean_nn_evals_per_sec": 1496.5548015,
+            "incumbent_samples": [
+              1496.160049,
+              1496.74341,
+              1496.975103,
+              1496.340644
+            ],
+            "iterations": 500,
+            "metric": "aggregate_timed_wall_nn_evals_per_sec",
+            "order": [
+              "incumbent",
+              "challenger",
+              "challenger",
+              "incumbent",
+              "challenger",
+              "incumbent",
+              "incumbent",
+              "challenger"
+            ],
+            "schema": 2,
+            "statistics": {
+              "accepted": false,
+              "confidence_level": 0.95,
+              "confidence_passed": false,
+              "direction_consistent": false,
+              "effect_size_passed": false,
+              "geometric_mean_improvement_fraction": -0.001019289922149453,
+              "lower_confidence_bound_improvement_fraction": -0.002974125306201561,
+              "mean_log_ratio": -0.0010198097513899754,
+              "minimum_improvement_fraction": 0.005,
+              "pair_count": 4,
+              "pair_improvement_fractions": [
+                -0.003053792943511602,
+                0.0002592281331641466,
+                -0.0016950829675889123,
+                0.00041663975545924714
+              ],
+              "pair_log_ratios": [
+                -0.003058465283847138,
+                0.00025919453935714925,
+                -0.001696521246286697,
+                0.00041655298521678434
+              ],
+              "sample_standard_deviation_log_ratio": 0.0016646365683641547,
+              "standard_error_log_ratio": 0.0008323182841820774,
+              "t_critical": 2.353363,
+              "test": "paired_log_ratio_one_sided_student_t"
+            },
+            "warmup": 50
+          },
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "value_terminal": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "value_terminal",
+            "id": "value_terminal-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "value_terminal-keep-incumbent",
+          "correctness": {
+            "candidate_sha256": "ec9470c82f3d5398d226dfcd54a6a63815b8f5b23ed80ca5816419a159f9614e",
+            "checks": {
+              "ownership_sigmoid_rmse": true,
+              "policy_probability_rmse": true,
+              "policy_top1": true,
+              "request_ownership_probability_abs": true,
+              "request_ownership_probability_rmse": true,
+              "request_policy_probability_abs": true,
+              "request_policy_probability_rmse": true,
+              "request_score_raw_abs": true,
+              "request_score_raw_rmse": true,
+              "request_value_probability_abs": true,
+              "request_value_probability_rmse": true,
+              "rows": true,
+              "score_mean_rmse": true,
+              "value_outcome_rmse": true,
+              "weighted_p0loss_delta": true
+            },
+            "comparison_sha256": "7d117bff54079c553f15dcfd73bfb409867f4fb193c97e9f1b18c681d9755cee",
+            "kind": "8192-row all-head FP32-reference replay",
+            "metrics": {
+              "ownership_sigmoid_rmse": 0.00029968563467264175,
+              "policy_probability_rmse": 0.00013367384963203222,
+              "policy_top1_vs_reference": 0.9974365234375,
+              "request_gate": {
+                "ownershipProbability": {
+                  "maximumAbs": 0.018626034259796143,
+                  "maximumAbsIndex": 342,
+                  "maximumAbsRow": 1851,
+                  "maximumRmse": 0.0018165837973356247,
+                  "maximumRmseRow": 1310
+                },
+                "policyProbability": {
+                  "maximumAbs": 0.015276432037353516,
+                  "maximumAbsIndex": 32,
+                  "maximumAbsRow": 683,
+                  "maximumRmse": 0.000885171873960644,
+                  "maximumRmseRow": 683
+                },
+                "scoreRaw": {
+                  "maximumAbs": 0.5462822914123535,
+                  "maximumAbsIndex": 4,
+                  "maximumAbsRow": 1017,
+                  "maximumRmse": 0.23662559688091278,
+                  "maximumRmseRow": 1017
+                },
+                "valueProbability": {
+                  "maximumAbs": 0.03859025239944458,
+                  "maximumAbsIndex": 1,
+                  "maximumAbsRow": 5420,
+                  "maximumRmse": 0.031504999846220016,
+                  "maximumRmseRow": 5420
+                }
+              },
+              "score_mean_rmse": 0.0022498182952404022,
+              "value_outcome_rmse": 0.002597125945612788,
+              "weighted_p0loss_delta": 7.033348083496094e-05
+            },
+            "reference_sha256": "c4c702192c667ad4d072ee00e1d31aac9cbf1bee610fbc7141a60bce0a6ba817",
+            "status": "passed",
+            "thresholds": {
+              "maximum_ownership_sigmoid_rmse": 0.001,
+              "maximum_policy_probability_rmse": 0.001,
+              "maximum_request_ownership_probability_abs": 0.025,
+              "maximum_request_ownership_probability_rmse": 0.006,
+              "maximum_request_policy_probability_abs": 0.025,
+              "maximum_request_policy_probability_rmse": 0.002,
+              "maximum_request_score_raw_abs": 0.6,
+              "maximum_request_score_raw_rmse": 0.3,
+              "maximum_request_value_probability_abs": 0.06,
+              "maximum_request_value_probability_rmse": 0.05,
+              "maximum_score_mean_rmse": 0.01,
+              "maximum_value_outcome_rmse": 0.01,
+              "maximum_weighted_p0loss_delta": 0.001,
+              "minimum_policy_top1_vs_reference": 0.995,
+              "minimum_rows": 8192
+            }
+          },
+          "discovery_nn_evals_per_sec": 1504.050501,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 1000,
+          "measurement_kind": "long_stable",
+          "measurement_max_relative_spread": 0.02,
+          "measurement_relative_spread": 0.01126994471843217,
+          "measurement_sample_count": 4,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1512.307688,
+            1508.175579,
+            1499.925423,
+            1495.357122
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": {
+            "accepted": false,
+            "challenger_candidate_id": "value_terminal-off",
+            "challenger_mean_nn_evals_per_sec": 1493.9575765,
+            "challenger_samples": [
+              1496.001102,
+              1495.88772,
+              1493.489112,
+              1490.452372
+            ],
+            "design": "ABBA-BAAB_adjacent_pairs",
+            "incumbent_candidate_id": "value_terminal-keep-incumbent",
+            "incumbent_mean_nn_evals_per_sec": 1495.7825,
+            "incumbent_samples": [
+              1494.20547,
+              1496.146231,
+              1497.072523,
+              1495.705776
+            ],
+            "iterations": 500,
+            "metric": "aggregate_timed_wall_nn_evals_per_sec",
+            "order": [
+              "incumbent",
+              "challenger",
+              "challenger",
+              "incumbent",
+              "challenger",
+              "incumbent",
+              "incumbent",
+              "challenger"
+            ],
+            "schema": 2,
+            "statistics": {
+              "accepted": false,
+              "confidence_level": 0.95,
+              "confidence_passed": false,
+              "direction_consistent": false,
+              "effect_size_passed": false,
+              "geometric_mean_improvement_fraction": -0.0012209488594405991,
+              "lower_confidence_bound_improvement_fraction": -0.0037224106162460687,
+              "mean_log_ratio": -0.0012216948247514333,
+              "minimum_improvement_fraction": 0.005,
+              "pair_count": 4,
+              "pair_improvement_fractions": [
+                0.001201730308215243,
+                -0.00017278458124192486,
+                -0.0023936121630362406,
+                -0.0035123244720290936
+              ],
+              "pair_log_ratios": [
+                0.0012010088083227442,
+                -0.00017279951021737162,
+                -0.0023964814321558534,
+                -0.0035185071649552523
+              ],
+              "sample_standard_deviation_log_ratio": 0.002131129964253053,
+              "standard_error_log_ratio": 0.0010655649821265266,
+              "t_critical": 2.353363,
+              "test": "paired_log_ratio_one_sided_student_t"
+            },
+            "warmup": 50
+          },
+          "selection_origin_confirmation": null,
+          "source_result": "certified-long-gate-b8-s4.json",
+          "stable_long_nn_evals_per_sec": 1504.050501,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "weight_sharing": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "weight_sharing",
+            "id": "weight_sharing-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "weight_sharing-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1503.868811,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1503.868811
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "wide_head": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "batch": 8,
+            "config": {},
+            "history_family": "wide_head",
+            "id": "wide_head-keep-incumbent",
+            "implementation": "config"
+          },
+          "candidate_id": "wide_head-keep-incumbent",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1511.672917,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1511.672917
+          ],
+          "overridden_keys": {},
+          "selection_confirmation": null,
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    },
+    "wide_projection": {
+      "batches": {
+        "8": {
+          "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+          "candidate": {
+            "activation_markers": [
+              "SM89 backend: runtime tactic active: cudaUseWideFFN",
+              "SM89 backend: runtime tactic active: cudaUseWideQKV"
+            ],
+            "batch": 8,
+            "config": {
+              "cudaUseWideFFN": true,
+              "cudaUseWideQKV": true
+            },
+            "history_family": "wide_projection",
+            "id": "wide-projection-both",
+            "implementation": "config"
+          },
+          "candidate_id": "wide-projection-both",
+          "correctness": null,
+          "discovery_nn_evals_per_sec": 1423.556697,
+          "effective": true,
+          "history_accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "history_base_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+          "implementation": "config",
+          "measurement_iterations": 100,
+          "measurement_kind": "short_scan",
+          "measurement_max_relative_spread": 0.1,
+          "measurement_relative_spread": 0.0,
+          "measurement_sample_count": 1,
+          "measurement_warmup": 50,
+          "nn_evals_per_sec_samples": [
+            1423.556697
+          ],
+          "overridden_keys": {
+            "cudaUseWideFFN": "dual_ffn",
+            "cudaUseWideQKV": "qkv_rope"
+          },
+          "selection_confirmation": {
+            "accepted": false,
+            "challenger_candidate_id": "wide-projection-off",
+            "challenger_mean_nn_evals_per_sec": 1498.35472125,
+            "challenger_samples": [
+              1498.15064,
+              1497.001627,
+              1499.490341,
+              1498.776277
+            ],
+            "design": "ABBA-BAAB_adjacent_pairs",
+            "incumbent_candidate_id": "wide-projection-both",
+            "incumbent_mean_nn_evals_per_sec": 1491.547197,
+            "incumbent_samples": [
+              1483.951565,
+              1499.404162,
+              1484.19135,
+              1498.641711
+            ],
+            "iterations": 500,
+            "metric": "aggregate_timed_wall_nn_evals_per_sec",
+            "order": [
+              "incumbent",
+              "challenger",
+              "challenger",
+              "incumbent",
+              "challenger",
+              "incumbent",
+              "incumbent",
+              "challenger"
+            ],
+            "schema": 2,
+            "statistics": {
+              "accepted": false,
+              "confidence_level": 0.95,
+              "confidence_passed": false,
+              "direction_consistent": false,
+              "effect_size_passed": false,
+              "geometric_mean_improvement_fraction": 0.004576517991890639,
+              "lower_confidence_bound_improvement_fraction": -0.002716749615807342,
+              "mean_log_ratio": 0.0045660775751435725,
+              "minimum_improvement_fraction": 0.005,
+              "pair_count": 4,
+              "pair_improvement_fractions": [
+                0.009568422133777732,
+                -0.0016023264846719565,
+                0.010307963996690761,
+                8.979197563507846e-05
+              ],
+              "pair_log_ratios": [
+                0.009522934714407023,
+                -0.0016036115827015608,
+                0.01025519922429189,
+                8.978794457693688e-05
+              ],
+              "sample_standard_deviation_log_ratio": 0.0061924354659273675,
+              "standard_error_log_ratio": 0.0030962177329636837,
+              "t_critical": 2.353363,
+              "test": "paired_log_ratio_one_sided_student_t"
+            },
+            "warmup": 50
+          },
+          "selection_origin_confirmation": null,
+          "source_result": "refinement-b8-s4.json",
+          "stable_long_nn_evals_per_sec": null,
+          "superseded_by": null
+        }
+      },
+      "space_sha256": "d84f51fa5e99783f2ce7541206d55c13253b3be934c111ba30ae8e6a13798afc"
+    }
+  },
+  "final_joint": {
+    "8": {
+      "accumulated_overrides": "cudaDisableWarmup=true,cudaDualFfnCutlassTacticSm89=m128-n64-k32-w64-n32-s3-sw4-exp,cudaFlashAttentionTacticSm89=d32-m64-n96-w4-pack0-both16,cudaFusedFFNAotTacticSm89=disabled,cudaLinear2AotTacticSm89=disabled,cudaLinear2CutlassTacticSm89=m128-n128-k32-w64-n32-s3-sw1,cudaOutProjCutlassTacticSm89=disabled,cudaPersistingL2HitRatioSm89=1,cudaPlainQKVVariantSm89=0,cudaPolicyP1RowsPerBlockSm89=0,cudaPostConvCutlassTacticSm89=m128-n128-k32-w64-n64-s3-sw1,cudaPreConvCutlassTacticSm89=disabled,cudaRMSNormRowsPerBlockSm89=4,cudaRoPEBatchGroupSm89=1,cudaShareModelWeights=false,cudaSm89Backend=true,cudaSm89Forward=true,cudaUseFP16=true,cudaUseFusedQKRoPE=false,cudaUseFusedResidual=true,cudaUseFusedValueTerminalSm89=false,cudaUseGraphInference=false,cudaUseHeadBNHalfToFloat=false,cudaUseInitialConvFrontend=false,cudaUseInitialGlobalMatMulAdd=false,cudaUseLinear2PostBNSiluSm89=false,cudaUseNHWC=true,cudaUsePersistingL2Inner=false,cudaUsePersistingL2Trunk=false,cudaUsePostConvBNSiluSm89=true,cudaUsePrecomputedQKRoPESm89=false,cudaUseQKVRoPEGemmSm89=true,cudaUseRMSNormOpt=true,cudaUseScaleBiasSiluVec4C384Sm89=false,cudaUseScaleBiasSiluVec8C384Sm89=false,cudaUseScaleBiasSiluVec8Sm89=false,cudaUseSplitQKVRoPEGemmSm89=false,cudaUseWideFFN=true,cudaUseWideHeadProjection=false,cudaUseWideQKV=true,cudaWarmupOnlyMaxBatchSize=true,nnBatchAwareDispatch=false,nnMaxBatchSize=8",
+      "binary_sha256": "87c7767a7d3aee5b5bc39f47025542b3d66b74c423b581336fe2a78196e32747",
+      "candidate_id": "value_terminal-keep-incumbent",
+      "correctness": {
+        "candidate_sha256": "ec9470c82f3d5398d226dfcd54a6a63815b8f5b23ed80ca5816419a159f9614e",
+        "checks": {
+          "ownership_sigmoid_rmse": true,
+          "policy_probability_rmse": true,
+          "policy_top1": true,
+          "request_ownership_probability_abs": true,
+          "request_ownership_probability_rmse": true,
+          "request_policy_probability_abs": true,
+          "request_policy_probability_rmse": true,
+          "request_score_raw_abs": true,
+          "request_score_raw_rmse": true,
+          "request_value_probability_abs": true,
+          "request_value_probability_rmse": true,
+          "rows": true,
+          "score_mean_rmse": true,
+          "value_outcome_rmse": true,
+          "weighted_p0loss_delta": true
+        },
+        "comparison_sha256": "7d117bff54079c553f15dcfd73bfb409867f4fb193c97e9f1b18c681d9755cee",
+        "kind": "8192-row all-head FP32-reference replay",
+        "metrics": {
+          "ownership_sigmoid_rmse": 0.00029968563467264175,
+          "policy_probability_rmse": 0.00013367384963203222,
+          "policy_top1_vs_reference": 0.9974365234375,
+          "request_gate": {
+            "ownershipProbability": {
+              "maximumAbs": 0.018626034259796143,
+              "maximumAbsIndex": 342,
+              "maximumAbsRow": 1851,
+              "maximumRmse": 0.0018165837973356247,
+              "maximumRmseRow": 1310
+            },
+            "policyProbability": {
+              "maximumAbs": 0.015276432037353516,
+              "maximumAbsIndex": 32,
+              "maximumAbsRow": 683,
+              "maximumRmse": 0.000885171873960644,
+              "maximumRmseRow": 683
+            },
+            "scoreRaw": {
+              "maximumAbs": 0.5462822914123535,
+              "maximumAbsIndex": 4,
+              "maximumAbsRow": 1017,
+              "maximumRmse": 0.23662559688091278,
+              "maximumRmseRow": 1017
+            },
+            "valueProbability": {
+              "maximumAbs": 0.03859025239944458,
+              "maximumAbsIndex": 1,
+              "maximumAbsRow": 5420,
+              "maximumRmse": 0.031504999846220016,
+              "maximumRmseRow": 5420
+            }
+          },
+          "score_mean_rmse": 0.0022498182952404022,
+          "value_outcome_rmse": 0.002597125945612788,
+          "weighted_p0loss_delta": 7.033348083496094e-05
+        },
+        "reference_sha256": "c4c702192c667ad4d072ee00e1d31aac9cbf1bee610fbc7141a60bce0a6ba817",
+        "status": "passed",
+        "thresholds": {
+          "maximum_ownership_sigmoid_rmse": 0.001,
+          "maximum_policy_probability_rmse": 0.001,
+          "maximum_request_ownership_probability_abs": 0.025,
+          "maximum_request_ownership_probability_rmse": 0.006,
+          "maximum_request_policy_probability_abs": 0.025,
+          "maximum_request_policy_probability_rmse": 0.002,
+          "maximum_request_score_raw_abs": 0.6,
+          "maximum_request_score_raw_rmse": 0.3,
+          "maximum_request_value_probability_abs": 0.06,
+          "maximum_request_value_probability_rmse": 0.05,
+          "maximum_score_mean_rmse": 0.01,
+          "maximum_value_outcome_rmse": 0.01,
+          "maximum_weighted_p0loss_delta": 0.001,
+          "minimum_policy_top1_vs_reference": 0.995,
+          "minimum_rows": 8192
+        }
+      },
+      "family": "value_terminal",
+      "measurement_iterations": 1000,
+      "measurement_kind": "long_stable",
+      "measurement_max_relative_spread": 0.02,
+      "measurement_relative_spread": 0.01126994471843217,
+      "measurement_sample_count": 4,
+      "measurement_warmup": 50,
+      "nn_evals_per_sec_samples": [
+        1512.307688,
+        1508.175579,
+        1499.925423,
+        1495.357122
+      ],
+      "source_result": "certified-long-gate-b8-s4.json",
+      "stable_long_nn_evals_per_sec": 1504.050501
+    }
+  },
+  "generated_utc": "2026-08-12T05:09:26.018049+00:00",
+  "identity_missing": [],
+  "kind": "cuda-tactic-plan",
+  "missing": [],
+  "plan_id": "sm86-rtx3080ti-abc187f1c89a74d4",
+  "plan_sha256": "abc187f1c89a74d4ef2af34b7b72a4cf1d685eb6a45db8dc306e076f6d5371e7",
+  "positive_history_closure": {
+    "architecture": "sm86",
+    "complete": true,
+    "contract_sha256": "2808a8fa7bf4dfce33a8459d86898176e328fe1ec47da0ea03c3685587fdb096",
+    "does_not_inherit_sm89_performance_history": true,
+    "links": [
+      "backend",
+      "scan_candidate",
+      "activation",
+      "plan_apply"
+    ],
+    "performance_evidence_scope": "RTX3080Ti audit E003/E006/E014",
+    "record_count": 7,
+    "record_ids": [
+      "sm86-e003-wide-projection-bundle",
+      "sm86-e003-qkv-rope-gemm",
+      "sm86-e003-dual-ffn-sw4",
+      "sm86-e003-fused-residual",
+      "sm86-e006-postconv-bn-silu",
+      "sm86-rmsnorm-warps4",
+      "sm86-e014-flash-t5-both16"
+    ],
+    "validated_batches": [
+      8
+    ]
+  },
+  "production_ready": true,
+  "ready_for_scan_bypass": true,
+  "reproducibility": {
+    "notes": [
+      "Full commands and environment snapshots remain in the content-addressed scan results, not in this runtime plan.",
+      "The receiving device must match architecture/GPU class and stream topology; producer device ordinal may change."
+    ]
+  },
+  "schema": 1,
+  "search_space_production_eligible": true,
+  "selection": {
+    "confirmation_confidence_level": 0.95,
+    "confirmation_iterations": 500,
+    "confirmation_pairs": 4,
+    "confirmation_requires_consistent_direction": true,
+    "maximum_relative_spread": 0.02,
+    "method": "history-ordered accumulated coordinate winners; accepted changes require ABBA-BAAB paired log-ratio evidence; final joint long-stable row",
+    "metric": "aggregate timed-wall physical nnEval/s",
+    "minimum_improvement_fraction": 0.005,
+    "minimum_iterations": 1000,
+    "minimum_samples": 4,
+    "short_scan_values_are_never_final": true
+  },
+  "source_results": [
+    {
+      "family": "",
+      "finished_utc": "2026-08-12T03:35:17.206695+00:00",
+      "name": "refinement-b8-s4.json",
+      "rows": 123,
+      "sha256": "916ecc8909b161920888451ad063a7ca73f0095cc52b4a14cfb6796e5ca40e4f"
+    },
+    {
+      "family": null,
+      "finished_utc": "2026-08-12T03:46:11.559396+00:00",
+      "name": "certified-long-gate-b8-s4.json",
+      "rows": 1,
+      "sha256": "97eefe5b0110337a09f52fc0360a1b1925c0457e47723e212a461b9153380cf3"
+    }
+  ],
+  "status": "complete_long_stable",
+  "target": {
+    "architecture": "sm86",
+    "compute_capability": [
+      8,
+      6
+    ],
+    "config_sha256": "71b33bc7031d5552ab0bda586ec1b9def81c386395c523777faca4465a2c971c",
+    "cuda_device_capabilities_at_scan": [
+      {
+        "asyncEngineCount": 2,
+        "clockRateKhz": 1665000,
+        "computeCapabilityMajor": 8,
+        "computeCapabilityMinor": 6,
+        "concurrentKernels": true,
+        "l2CacheSize": 6291456,
+        "maxThreadsPerBlock": 1024,
+        "maxThreadsPerMultiProcessor": 1536,
+        "memoryBusWidth": 384,
+        "memoryClockRateKhz": 9501000,
+        "multiProcessorCount": 80,
+        "name": "NVIDIA GeForce RTX 3080 Ti",
+        "ordinal": 0,
+        "regsPerMultiprocessor": 65536,
+        "sharedMemPerBlockOptin": 101376,
+        "sharedMemPerMultiprocessor": 102400,
+        "totalGlobalMem": 12491292672,
+        "warpSize": 32
+      }
+    ],
+    "device_ordinal_at_scan": 0,
+    "device_ordinals_at_scan": [
+      0
+    ],
+    "fixed_board": [
+      19,
+      19
+    ],
+    "gpu_class": "rtx3080ti",
+    "model_sha256": "1881600caab9e9d85a3dd6a019e9b8e7d2c237b5f984e13ed49a8645be3077c6",
+    "precision": "FP16/NHWC",
+    "runtime_config": {
+      "cudaUseFP16": true,
+      "cudaUseGraphInference": false,
+      "cudaUseNHWC": true,
+      "cudaWarmupOnlyMaxBatchSize": true,
+      "nnBatchAwareDispatch": false
+    },
+    "streams": 4
+  }
+}

@@ -14,7 +14,11 @@ using namespace std;
 namespace Sm89Backend {
 
 bool isSm89Arch(int majorComputeCapability, int minorComputeCapability) {
-  return majorComputeCapability == 8 && minorComputeCapability == 9;
+  // This implementation is an SM8x backend. Its generic CUDA/cuBLAS/cuDNN
+  // paths and optional CUTLASS SM80 kernels also support GA102 (SM86).
+  // Device-specific performance history remains separated by the autotuner.
+  return majorComputeCapability == 8 &&
+    (minorComputeCapability == 6 || minorComputeCapability == 9);
 }
 
 static bool getBoolOpt(ConfigParser& cfg, const string& key, bool defaultValue) {

@@ -1,6 +1,9 @@
 import hashlib
 import json
 import pathlib
+import statistics
+import struct
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -15,14 +18,18 @@ sys.path.insert(0, str(PYTHON_DIR))
 from cuda_tactic_workflow import (  # noqa: E402
     ARTIFACT_BUNDLE_KIND,
     ALL_FAMILIES,
+    CONFIRMATION_ORDER,
+    SM86_POSITIVE_HISTORY,
     SM89_FAMILIES,
     SM89_DECISION_GROUPS,
     SM120_FAMILIES,
     SM120_DECISION_GROUPS,
     RESULT_KIND,
+    PLAN_RUNTIME_CONFIG_KEYS,
     SM89_RUNTIME_CONFIG_KEYS,
     SM120_RUNTIME_CONFIG_KEYS,
     _compile_metadata,
+    _run_paired_selection_confirmation,
     _wait_for_gpu_sm_idle,
     absolute_paths_in_json,
     build_plan,
@@ -31,6 +38,7 @@ from cuda_tactic_workflow import (  # noqa: E402
     canonical_refinement_rows,
     candidate_config,
     candidate_map,
+    cuda_architecture_guard,
     choose_history_stage_winner,
     command_certify,
     effective_candidate_map,
@@ -43,22 +51,81 @@ from cuda_tactic_workflow import (  # noqa: E402
     positive_history_seed_candidate_ids,
     refinement_sweep_limit_can_resume,
     refinement_top_candidates,
+    result_metric,
     resolve_candidate_config_state,
     restrict_space_to_plan,
     runtime_tactic_baseline,
     scan_command,
     sha256_file,
     stable_metric,
+    selection_confirmation_error,
+    selection_origin_confirmation_error,
     stable_optimized_prescan_state,
     stable_prescan_candidate_ids,
     summarize_samples,
+    summarize_paired_confirmation,
     tactic_overrides,
     validate_artifact_bundle,
+    validate_linked_aot_replay_certificate,
     validate_plan,
     write_json,
 )
 from cuda_tactic_history import POSITIVE_HISTORY  # noqa: E402
 from portable_fat_scan import select_tilelang_requests  # noqa: E402
+
+
+def _make_confirmation(
+    incumbent_id, challenger_id, incumbent_samples, challenger_samples,
+    min_improvement_fraction=0.005,
+):
+    summary = summarize_paired_confirmation(
+        incumbent_samples, challenger_samples,
+        min_improvement_fraction=min_improvement_fraction,
+    )
+    samples = {
+        "incumbent": list(incumbent_samples),
+        "challenger": list(challenger_samples),
+    }
+    positions = {"incumbent": 0, "challenger": 0}
+    candidate_ids = {
+        "incumbent": incumbent_id, "challenger": challenger_id,
+    }
+    runs = []
+    for sequence, label in enumerate(CONFIRMATION_ORDER):
+        throughput = samples[label][positions[label]]
+        positions[label] += 1
+        runs.append({
+            "sequence": sequence,
+            "label": label,
+            "candidate_id": candidate_ids[label],
+            "throughput": throughput,
+            "benchmark": {
+                "benchmarkMetricSchemaVersion": 2,
+                "batchSize": 1,
+                "numServerThreads": 1,
+                "numIterations": 500,
+                "timedWallNNEvals": 500,
+                "timedWallSeconds": 500.0 / throughput,
+                "aggregateWallNNEvalsPerSec": throughput,
+            },
+        })
+    return {
+        "schema": 2,
+        "metric": "aggregate_timed_wall_nn_evals_per_sec",
+        "design": "ABBA-BAAB_adjacent_pairs",
+        "order": list(CONFIRMATION_ORDER),
+        "iterations": 500,
+        "warmup": 50,
+        "incumbent_candidate_id": incumbent_id,
+        "challenger_candidate_id": challenger_id,
+        "incumbent_samples": list(incumbent_samples),
+        "challenger_samples": list(challenger_samples),
+        "incumbent_mean_nn_evals_per_sec": statistics.mean(incumbent_samples),
+        "challenger_mean_nn_evals_per_sec": statistics.mean(challenger_samples),
+        "statistics": summary,
+        "accepted": summary["accepted"],
+        "runs": runs,
+    }
 
 
 def _make_result(space_path, space, family, batches, model_path, config_path):
@@ -71,8 +138,14 @@ def _make_result(space_path, space, family, batches, model_path, config_path):
             # first-candidate/anchor selection.
             base = 100.0 + index * 3.0 + batch
             is_winner = index + 1 == len(values)
-            incumbent_median = 100.25 + batch
             winner_median = base + 0.25
+            incumbent_median = winner_median / 1.01
+            incumbent_confirmation_samples = [incumbent_median] * 4
+            challenger_confirmation_samples = [winner_median] * 4
+            confirmation = _make_confirmation(
+                f"{family}-keep-incumbent", candidate["id"],
+                incumbent_confirmation_samples, challenger_confirmation_samples,
+            ) if is_winner else None
             rows.append({
                 "family": family,
                 "batch": batch,
@@ -91,14 +164,25 @@ def _make_result(space_path, space, family, batches, model_path, config_path):
                     incumbent_median if is_winner else None
                 ),
                 "history_accepted_change": True if is_winner else None,
-                "history_min_improvement_fraction": 0.001 if is_winner else None,
+                "history_min_improvement_fraction": 0.005 if is_winner else None,
                 "history_improvement_fraction_vs_incumbent": (
-                    winner_median / incumbent_median - 1.0
+                    confirmation["statistics"]
+                        ["geometric_mean_improvement_fraction"]
                     if is_winner else None
                 ),
+                "selection_confirmation": confirmation,
+                "selection_origin_confirmation": confirmation,
                 "history_base_overrides": "test-base",
-                "history_accumulated_overrides": "test-final" if is_winner else None,
-                **summarize_samples([base, base + 0.5], iterations=1000, warmup=50),
+                "history_accumulated_overrides": (
+                    "cudaUseFP16=true,cudaUseGraphInference=false,"
+                    "cudaUseNHWC=true,cudaWarmupOnlyMaxBatchSize=true,"
+                    "nnBatchAwareDispatch=false"
+                    if is_winner else None
+                ),
+                **summarize_samples(
+                    [base, base + 0.2, base + 0.3, base + 0.5],
+                    iterations=1000, warmup=50,
+                ),
             })
     return {
         "schema": 1,
@@ -123,6 +207,205 @@ def _make_result(space_path, space, family, batches, model_path, config_path):
 
 
 class CudaTacticWorkflowTests(unittest.TestCase):
+    def test_result_metric_prefers_aggregate_timed_wall_and_guards_schema_v2(self):
+        valid_v2 = {
+            "benchmarkMetricSchemaVersion": 2,
+            "batchSize": 8,
+            "numServerThreads": 4,
+            "numIterations": 500,
+            "timedWallNNEvals": 16000,
+            "timedWallSeconds": 10.0,
+            "aggregateWallNNEvalsPerSec": 1600.0,
+            "combinedNNEvalsPerSec": 999.0,
+        }
+        self.assertEqual(
+            result_metric(valid_v2),
+            1600.0,
+        )
+        self.assertEqual(
+            result_metric({"combinedNNEvalsPerSec": 456.0}),
+            456.0,
+        )
+        with self.assertRaisesRegex(ValueError, "schema v2"):
+            result_metric({
+                **valid_v2,
+                "aggregateWallNNEvalsPerSec": float("nan"),
+            })
+        with self.assertRaisesRegex(ValueError, "timed work"):
+            result_metric({**valid_v2, "timedWallNNEvals": 17600})
+        with self.assertRaisesRegex(ValueError, "inconsistent"):
+            result_metric({
+                **valid_v2,
+                "aggregateWallNNEvalsPerSec": 1590.0,
+            })
+
+    def test_paired_confirmation_accepts_only_stable_material_improvement(self):
+        incumbent = [1000.0, 1002.0, 999.0, 1001.0]
+        accepted = summarize_paired_confirmation(
+            incumbent, [value * 1.01 for value in incumbent],
+            min_improvement_fraction=0.005,
+        )
+        self.assertTrue(accepted["accepted"])
+        self.assertTrue(accepted["direction_consistent"])
+        self.assertTrue(accepted["effect_size_passed"])
+        self.assertTrue(accepted["confidence_passed"])
+        self.assertAlmostEqual(
+            accepted["geometric_mean_improvement_fraction"], 0.01,
+        )
+        self.assertGreater(
+            accepted["lower_confidence_bound_improvement_fraction"], 0.0,
+        )
+
+        too_small = summarize_paired_confirmation(
+            incumbent, [value * 1.004 for value in incumbent],
+            min_improvement_fraction=0.005,
+        )
+        self.assertFalse(too_small["accepted"])
+        self.assertFalse(too_small["effect_size_passed"])
+
+    def test_paired_confirmation_rejects_direction_or_confidence_failures(self):
+        incumbent = [1000.0] * 4
+        inconsistent = summarize_paired_confirmation(
+            incumbent, [1020.0, 1020.0, 990.0, 1020.0],
+            min_improvement_fraction=0.005,
+        )
+        self.assertFalse(inconsistent["accepted"])
+        self.assertFalse(inconsistent["direction_consistent"])
+
+        noisy_positive = summarize_paired_confirmation(
+            incumbent, [1001.0, 1001.0, 1001.0, 1100.0],
+            min_improvement_fraction=0.005,
+        )
+        self.assertTrue(noisy_positive["direction_consistent"])
+        self.assertTrue(noisy_positive["effect_size_passed"])
+        self.assertFalse(noisy_positive["confidence_passed"])
+        self.assertFalse(noisy_positive["accepted"])
+
+    def test_paired_confirmation_rejects_the_observed_no_lse_noise_pattern(self):
+        # E018's four alternating control/candidate samples had a tiny positive
+        # unpaired mean but mixed pair directions.  It must remain rejected.
+        result = summarize_paired_confirmation(
+            [1245.218, 1240.276, 1233.325, 1228.767],
+            [1240.079, 1243.039, 1231.479, 1236.155],
+            min_improvement_fraction=0.005,
+        )
+        self.assertFalse(result["direction_consistent"])
+        self.assertFalse(result["accepted"])
+
+    def test_paired_confirmation_runner_uses_actual_abba_baab_order(self):
+        rates = [
+            1000.0, 1010.0, 1011.0, 1001.0,
+            1012.0, 1002.0, 1003.0, 1013.0,
+        ]
+        call_index = 0
+
+        def run(command, *, device, timeout):
+            nonlocal call_index
+            rate = rates[call_index]
+            call_index += 1
+            record = {
+                "benchmarkMetricSchemaVersion": 2,
+                "batchSize": 1,
+                "numServerThreads": 1,
+                "numIterations": 500,
+                "timedWallNNEvals": 500,
+                "timedWallSeconds": 500.0 / rate,
+                "aggregateWallNNEvalsPerSec": rate,
+            }
+            return (
+                subprocess.CompletedProcess(
+                    command, 0, json.dumps(record) + "\n", "",
+                ),
+                False,
+                {"device": device, "timeout": timeout},
+            )
+
+        with tempfile.TemporaryDirectory() as temporary_text:
+            temporary = pathlib.Path(temporary_text)
+            rows = {
+                "incumbent": {
+                    "candidate_id": "keep",
+                    "command": ["katago", "benchmarknn", "-iterations", "100"],
+                },
+                "challenger": {
+                    "candidate_id": "fast",
+                    "command": ["katago", "benchmarknn", "-iterations", "100"],
+                },
+            }
+            with patch(
+                "cuda_tactic_workflow._run_benchmark_with_occupancy",
+                side_effect=run,
+            ):
+                confirmation = _run_paired_selection_confirmation(
+                    rows,
+                    confirmation_iterations=500,
+                    warmup=50,
+                    min_improvement_fraction=0.005,
+                    max_attempts=1,
+                    timeout_seconds=60.0,
+                    device=0,
+                    raw_dir=temporary,
+                    stem_prefix="test",
+                    failure_context="test/B1",
+                )
+            self.assertEqual(call_index, 8)
+            self.assertEqual(confirmation["order"], list(CONFIRMATION_ORDER))
+            self.assertEqual(
+                [run["label"] for run in confirmation["runs"]],
+                list(CONFIRMATION_ORDER),
+            )
+            self.assertTrue(confirmation["accepted"])
+            self.assertEqual(
+                [run["command"][-1] for run in confirmation["runs"]],
+                ["500"] * 8,
+            )
+            self.assertEqual(len(list(temporary.glob("*.out"))), 8)
+            self.assertEqual(len(list(temporary.glob("*.err"))), 8)
+
+    def test_selection_confirmation_is_recomputed_not_trusted(self):
+        incumbent_id = "fa4-keep-incumbent"
+        winner_id = "fa4-fast"
+        confirmation = _make_confirmation(
+            incumbent_id, winner_id, [1000.0] * 4, [1010.0] * 4,
+        )
+        row = {
+            "candidate_id": winner_id,
+            "history_incumbent_candidate_id": incumbent_id,
+            "history_accepted_change": True,
+            "history_min_improvement_fraction": 0.005,
+            "history_improvement_fraction_vs_incumbent": (
+                confirmation["statistics"]
+                    ["geometric_mean_improvement_fraction"]
+            ),
+            "selection_confirmation": confirmation,
+        }
+        self.assertIsNone(selection_confirmation_error(row))
+        confirmation["statistics"][
+            "lower_confidence_bound_improvement_fraction"
+        ] = 0.5
+        self.assertIn(
+            "inconsistent", selection_confirmation_error(row),
+        )
+
+    def test_non_seed_selected_tactic_requires_origin_confirmation(self):
+        row = {"candidate_id": "fa4-fast"}
+        self.assertIn(
+            "no origin",
+            selection_origin_confirmation_error(
+                row, family="fa4", trusted_seed_id=None,
+            ),
+        )
+        self.assertIsNone(selection_origin_confirmation_error(
+            row, family="fa4", trusted_seed_id="fa4-fast",
+        ))
+        confirmation = _make_confirmation(
+            "fa4-keep-incumbent", "fa4-fast", [1000.0] * 4, [1010.0] * 4,
+        )
+        row["selection_origin_confirmation"] = confirmation
+        self.assertIsNone(selection_origin_confirmation_error(
+            row, family="fa4", trusted_seed_id=None,
+        ))
+
     def test_external_sm_work_waits_and_retries_at_low_frequency(self):
         with (
             patch(
@@ -153,8 +436,18 @@ class CudaTacticWorkflowTests(unittest.TestCase):
     def test_nvcc_arch_flag_uses_the_compiler_spelling(self):
         self.assertEqual(nvcc_arch_flag([8, 9]), "-arch=sm_89")
         self.assertEqual(nvcc_arch_flag([12, 0]), "-arch=sm_120")
+        self.assertEqual(
+            cuda_architecture_guard([8, 6]),
+            "__CUDA_ARCH__ >= 860 && __CUDA_ARCH__ < 870",
+        )
+        self.assertEqual(
+            cuda_architecture_guard([8, 9]),
+            "__CUDA_ARCH__ >= 890 && __CUDA_ARCH__ < 900",
+        )
         with self.assertRaisesRegex(ValueError, "compute capability"):
             nvcc_arch_flag("sm89")
+        with self.assertRaisesRegex(ValueError, "compute capability"):
+            cuda_architecture_guard([8])
 
     def test_architecture_family_sets_have_one_ordered_union(self):
         self.assertEqual(
@@ -311,6 +604,50 @@ class CudaTacticWorkflowTests(unittest.TestCase):
                 f"{family}-keep-incumbent"
             ]
             self.assertEqual(candidate_config(family, incumbent), {})
+
+    def test_sm86_is_explicit_and_uses_only_its_audited_history(self):
+        self.assertEqual(
+            canonical_architecture(None, "rtx3080ti"), "sm86",
+        )
+        sm86 = materialize_space(
+            "sm86", "rtx3080ti", 0, [8], 4,
+            device_properties={
+                "compute_capability": [8, 6],
+                "multiProcessorCount": 80,
+                "name": "NVIDIA GeForce RTX 3080 Ti",
+            },
+        )
+        self.assertEqual(sm86["architecture"], "sm86")
+        self.assertEqual(sm86["compute_capability"], [8, 6])
+        self.assertEqual(sm86["families"], list(SM89_FAMILIES))
+        closure = sm86["positive_history_closure"]
+        self.assertEqual(closure["architecture"], "sm86")
+        self.assertTrue(closure["does_not_inherit_sm89_performance_history"])
+        self.assertEqual(
+            closure["record_ids"],
+            [record["history_id"] for record in SM86_POSITIVE_HISTORY],
+        )
+        self.assertEqual(closure["record_count"], 7)
+        seeds = positive_history_seed_candidate_ids(
+            "sm86", "rtx3080ti", 8,
+        )
+        self.assertEqual(
+            seeds["fa4"], "fa4-d32-m64-n96-w4-pack0-both16",
+        )
+        self.assertEqual(seeds["rmsnorm"], "rmsnorm-warps4")
+        overrides, selected, markers = stable_optimized_prescan_state(
+            "sm86", "rtx3080ti", 0, 4, 8,
+        )
+        self.assertTrue(overrides["cudaSm89Backend"])
+        self.assertTrue(overrides["cudaSm89Forward"])
+        self.assertFalse(overrides["cudaSm120Backend"])
+        self.assertEqual(selected, seeds)
+        self.assertTrue(markers)
+        with self.assertRaisesRegex(ValueError, "compute capability"):
+            materialize_space(
+                "sm86", "rtx3080ti", 0, [8], 4,
+                device_properties={"compute_capability": [8, 9]},
+            )
 
     def test_sm89_fat_scan_consumes_only_the_unified_space_schema(self):
         space = materialize_space("sm89", "rtx4090", 0, [4], 2)
@@ -530,6 +867,20 @@ class CudaTacticWorkflowTests(unittest.TestCase):
         wide_projection = candidate_map(space, "wide_projection", 4)[
             "wide-projection-off"
         ]
+        self.assertEqual(
+            wide_projection["config"]["cudaDualFfnCutlassTacticSm89"],
+            "disabled",
+        )
+        self.assertEqual(
+            wide_projection["config"]["cudaFusedFFNAotTacticSm89"],
+            "disabled",
+        )
+        self.assertFalse(
+            wide_projection["config"]["cudaUseQKVRoPEGemmSm89"]
+        )
+        self.assertFalse(
+            wide_projection["config"]["cudaUseSplitQKVRoPEGemmSm89"]
+        )
         qkv_rope = candidate_map(space, "qkv_rope", 4)[
             "qkv-rope-gemm-epilogue"
         ]
@@ -543,7 +894,35 @@ class CudaTacticWorkflowTests(unittest.TestCase):
         self.assertEqual(superseded, {})
         self.assertTrue(applied["cudaUseWideQKV"])
         self.assertEqual(overridden, {
-            "wide_projection": {"cudaUseWideQKV": "qkv_rope"},
+            "wide_projection": {
+                "cudaUseQKVRoPEGemmSm89": "qkv_rope",
+                "cudaUseSplitQKVRoPEGemmSm89": "qkv_rope",
+                "cudaUseWideQKV": "qkv_rope",
+            },
+        })
+
+        dual_ffn = candidate_map(space, "dual_ffn", 4)[
+            "dual_ffn-fallback"
+        ]
+        effective, superseded, applied, overridden = (
+            resolve_candidate_config_state({
+                "wide_projection": wide_projection,
+                "dual_ffn": dual_ffn,
+            })
+        )
+        self.assertEqual(list(effective), ["wide_projection", "dual_ffn"])
+        self.assertEqual(superseded, {})
+        self.assertEqual(
+            applied["cudaDualFfnCutlassTacticSm89"], "disabled"
+        )
+        self.assertEqual(
+            applied["cudaFusedFFNAotTacticSm89"], "disabled"
+        )
+        self.assertEqual(overridden, {
+            "wide_projection": {
+                "cudaDualFfnCutlassTacticSm89": "dual_ffn",
+                "cudaFusedFFNAotTacticSm89": "dual_ffn",
+            },
         })
 
         policy = candidate_map(space, "policy_p1", 4)[
@@ -612,9 +991,12 @@ class CudaTacticWorkflowTests(unittest.TestCase):
         )
 
     def test_only_long_stable_values_are_final_metrics(self):
-        stable = summarize_samples([100.0, 101.0], iterations=1000, warmup=50)
-        short = summarize_samples([100.0, 101.0], iterations=999, warmup=50)
-        noisy = summarize_samples([100.0, 130.0], iterations=1000, warmup=50)
+        stable_values = [100.0, 100.25, 100.75, 101.0]
+        stable = summarize_samples(stable_values, iterations=1000, warmup=50)
+        short = summarize_samples(stable_values, iterations=999, warmup=50)
+        noisy = summarize_samples(
+            [100.0, 100.0, 100.0, 130.0], iterations=1000, warmup=50,
+        )
         self.assertEqual(stable["measurement_kind"], "long_stable")
         self.assertEqual(stable_metric(stable), 100.5)
         self.assertIsNone(stable_metric(short))
@@ -843,6 +1225,20 @@ class CudaTacticWorkflowTests(unittest.TestCase):
             plan = build_plan(result_paths, space_path, SM89_FAMILIES, [1, 13])
             self.assertTrue(plan["ready_for_scan_bypass"])
             self.assertTrue(plan["production_ready"])
+            self.assertEqual(
+                plan["target"]["runtime_config"],
+                {
+                    "cudaUseFP16": True,
+                    "cudaUseGraphInference": False,
+                    "cudaUseNHWC": True,
+                    "cudaWarmupOnlyMaxBatchSize": True,
+                    "nnBatchAwareDispatch": False,
+                },
+            )
+            self.assertEqual(
+                set(plan["target"]["runtime_config"]),
+                set(PLAN_RUNTIME_CONFIG_KEYS),
+            )
             self.assertEqual(absolute_paths_in_json(plan), [])
             self.assertNotIn("provenance_snapshots", plan["reproducibility"])
             self.assertNotIn("path", plan["source_results"][0])
@@ -884,6 +1280,21 @@ class CudaTacticWorkflowTests(unittest.TestCase):
             )
             self.assertTrue(checked["valid"])
             self.assertTrue(checked["production_ready"])
+            runtime_tampered = json.loads(json.dumps(plan))
+            runtime_tampered["target"]["runtime_config"][
+                "nnBatchAwareDispatch"
+            ] = True
+            with self.assertRaisesRegex(
+                ValueError, "execution contract differs",
+            ):
+                validate_plan(
+                    runtime_tampered,
+                    space=space,
+                    space_path=space_path,
+                    model=model_path,
+                    config=config_path,
+                    families=SM89_FAMILIES,
+                )
             plan["apply"]["per_batch_tactic_overrides"]["13"] = "tampered=true"
             with self.assertRaisesRegex(ValueError, "apply mapping differs"):
                 validate_plan(
@@ -923,6 +1334,48 @@ class CudaTacticWorkflowTests(unittest.TestCase):
                 [result_path], space_path, SM89_FAMILIES, [1],
             )
             self.assertTrue(plan["ready_for_scan_bypass"])
+
+    def test_reduced_space_can_run_but_never_claim_production_readiness(self):
+        with tempfile.TemporaryDirectory() as temporary_text:
+            temporary = pathlib.Path(temporary_text)
+            space_path = temporary / "space.json"
+            model_path = temporary / "model.bin"
+            config_path = temporary / "base.cfg"
+            model_path.write_bytes(b"model")
+            config_path.write_text("nnMaxBatchSize = 1\n")
+            space = materialize_space("sm89", "rtx4090", 0, [1], 2)
+            space["candidate_policy"]["production_eligible"] = False
+            space["candidate_policy"]["micro_pipeline_smoke"] = True
+            write_json(space_path, space)
+            result_paths = []
+            for family in SM89_FAMILIES:
+                result_path = temporary / f"{family}.json"
+                result = _make_result(
+                    space_path, space, family, [1], model_path, config_path,
+                )
+                if family == "fa4":
+                    for row in result["rows"]:
+                        if row["history_stage_winner"]:
+                            row["history_incumbent_candidate_id"] = row["candidate_id"]
+                            row["history_accepted_change"] = False
+                            row["history_improvement_fraction_vs_incumbent"] = 0.0
+                write_json(result_path, result)
+                result_paths.append(result_path)
+            with self.assertRaisesRegex(
+                ValueError, "search_space_not_production_eligible"
+            ):
+                build_plan(result_paths, space_path, SM89_FAMILIES, [1])
+            plan = build_plan(
+                result_paths, space_path, SM89_FAMILIES, [1],
+                allow_partial=True,
+            )
+            self.assertFalse(plan["ready_for_scan_bypass"])
+            self.assertFalse(plan["production_ready"])
+            self.assertFalse(plan["search_space_production_eligible"])
+            self.assertIn(
+                "search_space_not_production_eligible",
+                plan["identity_missing"],
+            )
 
     def test_plan_combines_batch_partitions_from_two_sm89_devices(self):
         with tempfile.TemporaryDirectory() as temporary_text:
@@ -1096,6 +1549,148 @@ class CudaTacticWorkflowTests(unittest.TestCase):
                     bundle_path, space_path=space_path, space=space,
                     binary=binary,
                     required=[key, ("linear2", 4, "missing")],
+                )
+
+    def test_linked_aot_replay_certificate_binds_every_file_and_identity(self):
+        with tempfile.TemporaryDirectory() as temporary_text:
+            temporary = pathlib.Path(temporary_text)
+            space_path = temporary / "space.json"
+            binary = temporary / "katago"
+            model = temporary / "model.bin"
+            model_identity = temporary / "model.bin.gz"
+            config = temporary / "config.cfg"
+            corpus = temporary / "corpus.npz"
+            comparator = temporary / "compare.py"
+            certificate_path = temporary / "certificate.json"
+            space = materialize_space("sm86", "rtx3080ti", 0, [8], 4)
+            write_json(space_path, space)
+            for path, value in (
+                (binary, b"binary"), (model, b"model"),
+                (model_identity, b"identity"), (config, b"config"),
+                (corpus, b"corpus"), (comparator, b"comparator"),
+            ):
+                path.write_bytes(value)
+
+            candidates = [
+                (family, value)
+                for family in ("dual_ffn", "linear2")
+                for value in candidate_map(space, family, 8).values()
+                if value.get("requires_artifact")
+            ]
+            reference = temporary / "reference.krnn"
+            reference_log = temporary / "reference.log"
+            reference_metadata = {
+                "numRows": 8192, "maxBatchSize": 13, "numThreads": 1,
+                "fixedBatchTailPadding": True,
+            }
+            encoded_reference = json.dumps(reference_metadata).encode()
+            reference.write_bytes(
+                b"KRNN" + struct.pack("<I", len(encoded_reference)) +
+                encoded_reference
+            )
+            reference_log.write_text("official CUDA FP32\n")
+            runs = []
+            for index, (family, value) in enumerate(candidates):
+                markers = value["activation_markers"]
+                candidate = temporary / f"candidate-{index}.krnn"
+                replay_log = temporary / f"candidate-{index}.log"
+                comparison = temporary / f"candidate-{index}.json"
+                comparison_log = temporary / f"candidate-{index}.compare.log"
+                candidate_metadata = {
+                    "numRows": 8192, "maxBatchSize": 8, "numThreads": 4,
+                    "fixedBatchTailPadding": True,
+                }
+                encoded_candidate = json.dumps(candidate_metadata).encode()
+                candidate.write_bytes(
+                    b"KRNN" + struct.pack("<I", len(encoded_candidate)) +
+                    encoded_candidate
+                )
+                replay_log.write_text("\n".join(markers) + "\n")
+                comparison_log.write_text("passed\n")
+                checks = {f"check-{number}": True for number in range(15)}
+                overrides = {
+                    "nnMaxBatchSize": 8,
+                    "numNNServerThreadsPerModel": 4,
+                }
+                report = {
+                    "status": "passed", "numRows": 8192, "exactBatch": 8,
+                    "candidateMaxBatchSize": 8,
+                    "candidateFixedBatchTailPadding": True,
+                    "referenceFixedBatchTailPadding": True,
+                    "inputAndTargetSectionsByteExact": True,
+                    "candidateBinarySha256": sha256_file(binary),
+                    "modelSha256": sha256_file(model),
+                    "portableModelIdentitySha256": sha256_file(model_identity),
+                    "configSha256": sha256_file(config),
+                    "referenceSha256": sha256_file(reference),
+                    "candidateSha256": sha256_file(candidate),
+                    "replayLogSha256": sha256_file(replay_log),
+                    "candidateOverrides": overrides, "checks": checks,
+                }
+                write_json(comparison, report)
+                runs.append({
+                    "family": family, "candidateId": value["id"],
+                    "status": "passed", "checks": checks,
+                    "activationMarkersMissing": [],
+                    "activationMarkersRequired": markers,
+                    "candidateKrnnMetadata": candidate_metadata,
+                    "candidateKrnn": str(candidate),
+                    "candidateKrnnSha256": sha256_file(candidate),
+                    "replayLog": str(replay_log),
+                    "replayLogSha256": sha256_file(replay_log),
+                    "comparison": str(comparison),
+                    "comparisonSha256": sha256_file(comparison),
+                    "comparisonLog": str(comparison_log),
+                    "comparisonLogSha256": sha256_file(comparison_log),
+                    "overrides": overrides,
+                })
+            certificate = {
+                "schema": 1, "kind": "e022-linked-aot-replaynn",
+                "status": "passed", "valid": True, "architecture": "sm86",
+                "batch": 8, "numRows": 8192, "candidateStreams": 4,
+                "passedCount": len(runs), "completedCount": len(runs),
+                "spaceSha256": sha256_file(space_path),
+                "binarySha256": sha256_file(binary),
+                "modelSha256": sha256_file(model),
+                "portableModelIdentitySha256": sha256_file(model_identity),
+                "configSha256": sha256_file(config),
+                "corpus": str(corpus), "corpusSha256": sha256_file(corpus),
+                "compareScript": str(comparator),
+                "compareScriptSha256": sha256_file(comparator),
+                "reference": {
+                    "reference": str(reference),
+                    "referenceSha256": sha256_file(reference),
+                    "log": str(reference_log),
+                    "logSha256": sha256_file(reference_log),
+                    "batch": 13, "binarySha256": sha256_file(binary),
+                    "modelSha256": sha256_file(model),
+                    "portableModelIdentitySha256": sha256_file(model_identity),
+                    "configSha256": sha256_file(config),
+                },
+                "runs": runs,
+            }
+            write_json(certificate_path, certificate)
+            required = [
+                (run["family"], 8, run["candidateId"]) for run in runs
+            ]
+            evidence, metadata = validate_linked_aot_replay_certificate(
+                certificate_path, space_path=space_path, space=space,
+                binary=binary, model=model, model_identity=model_identity,
+                config=config, streams=4, required=required,
+            )
+            self.assertEqual(len(evidence), 10)
+            self.assertEqual(metadata["candidate_count"], 10)
+            self.assertTrue(all(
+                row["status"] == "passed" for row in evidence.values()
+            ))
+
+            replay_log = pathlib.Path(runs[0]["replayLog"])
+            replay_log.write_text(replay_log.read_text() + "tampered\n")
+            with self.assertRaisesRegex(ValueError, "replayLog evidence differs"):
+                validate_linked_aot_replay_certificate(
+                    certificate_path, space_path=space_path, space=space,
+                    binary=binary, model=model, model_identity=model_identity,
+                    config=config, streams=4, required=required,
                 )
 
 

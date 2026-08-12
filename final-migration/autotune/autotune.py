@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One entry point for SM89/SM120 optimized-baseline and exact-batch tuning."""
+"""One entry point for SM86/SM89/SM120 baseline and exact-batch tuning."""
 
 from __future__ import annotations
 
@@ -14,6 +14,13 @@ import shlex
 import subprocess
 import sys
 from typing import Any
+
+
+SM8X_WORKFLOWS = frozenset(("sm86", "sm89"))
+CUDA_ARCHITECTURE_DIGITS = {"sm86": "86", "sm89": "89", "sm120": "120"}
+DEFAULT_MIN_IMPROVEMENT_FRACTION = 0.005
+MIN_REFINEMENT_CONFIRMATION_ITERATIONS = 500
+MIN_GATE_REPEATS = 4
 
 try:
     from build_parallelism import conservative_build_jobs
@@ -68,20 +75,39 @@ def common_cmake(prefix: pathlib.Path) -> list[str]:
     ]
 
 
-def detect(repo: pathlib.Path, device: int) -> dict[str, Any]:
-    sys.path.insert(0, str(repo / "python"))
-    from portable_cuda_device import query_cuda_device
-
-    result = query_cuda_device(device)
+def classify_device(result: dict[str, Any]) -> dict[str, str]:
+    """Map hardware identity to implementation workflow and performance class."""
     cc = tuple(result["compute_capability"])
-    if cc == (8, 9):
+    name = str(result.get("name", "")).lower()
+    if cc == (8, 6):
+        workflow = "sm86"
+        if "3080 ti" in name or "3080ti" in name:
+            gpu_class = "rtx3080ti"
+        elif "3090" in name:
+            gpu_class = "rtx3090"
+        else:
+            gpu_class = "sm86"
+    elif cc == (8, 9):
         workflow = "sm89"
         gpu_class = "rtx4090"
     elif cc == (12, 0):
         workflow = "sm120"
         gpu_class = "rtx5080" if "5080" in result["name"].lower() else "rtx5090d"
     else:
-        raise RuntimeError(f"unsupported compute capability {cc}; expected SM89 or SM120")
+        raise RuntimeError(
+            f"unsupported compute capability {cc}; expected SM86, SM89, or SM120"
+        )
+    return {"workflow": workflow, "gpu_class": gpu_class}
+
+
+def detect(repo: pathlib.Path, device: int) -> dict[str, Any]:
+    sys.path.insert(0, str(repo / "python"))
+    from portable_cuda_device import query_cuda_device
+
+    result = query_cuda_device(device)
+    classification = classify_device(result)
+    workflow = classification["workflow"]
+    gpu_class = classification["gpu_class"]
     return {"schema": 1, "workflow": workflow, "gpu_class": gpu_class, "device": result}
 
 
@@ -212,7 +238,7 @@ def baseline_runtime(paths: dict[str, pathlib.Path]) -> tuple[pathlib.Path, path
     out, repo = paths["out"], paths["repo"]
     config = (
         repo / "docs/baseline-configs/bench-cuda-gpu0-4090-s2.cfg"
-        if paths["workflow"].name == "sm89"
+        if paths["workflow"].name in SM8X_WORKFLOWS
         else repo / "docs/baseline-configs/bench-cuda-gpu2-5090d-s2.cfg"
     )
     return out / "baseline-prescan-build/katago", config
@@ -230,10 +256,10 @@ def prepare_baseline_prescan_binary(
     configure = [
         "cmake", "-S", str(repo / "cpp"), "-B", str(build), "-G", "Ninja",
         "-DUSE_BACKEND=CUDA", "-DCMAKE_BUILD_TYPE=Release",
-        f"-DKATAGO_CUDA_ARCHITECTURES={'89' if architecture == 'sm89' else '120'}",
+        f"-DKATAGO_CUDA_ARCHITECTURES={CUDA_ARCHITECTURE_DIGITS[architecture]}",
         *common_cmake(prefix),
     ]
-    if architecture == "sm89":
+    if architecture in SM8X_WORKFLOWS:
         configure.append(
             f"-DSM89_FLASH_ATTN_ROOT={prefix / 'sources/flash-attention'}"
         )
@@ -310,7 +336,7 @@ def workflow_baseline_prescan(
     return sorted(selected)
 
 
-def sm89_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: dict[str, str]) -> None:
+def sm8x_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: dict[str, str]) -> None:
     repo, out, python = paths["repo"], paths["out"], paths["python"]
     space = out / "space.json"
     generation = out / "generation-plan.json"
@@ -319,10 +345,13 @@ def sm89_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: 
     build = out / "build"
     binary = build / "katago"
     bundle = out / "artifact-bundle.json"
+    architecture = paths["workflow"].name
+    if architecture not in SM8X_WORKFLOWS:
+        raise RuntimeError(f"SM8x preparation cannot build {architecture}")
 
     if not space.exists() or (args.force and not is_build_only_space(space)):
         run([str(python), "python/cuda_tactic_workflow.py", "space",
-             "--architecture", "sm89", "--gpu-class", paths["gpu_class"].name,
+             "--architecture", architecture, "--gpu-class", paths["gpu_class"].name,
              "--device", str(args.device), "--batches", args.batches,
              "--streams", str(args.streams), "--output", str(space)], cwd=repo, env=env)
     if not generation.exists() or args.force:
@@ -360,7 +389,7 @@ def sm89_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: 
     configure = [
         "cmake", "-S", str(repo / "cpp"), "-B", str(build), "-G", "Ninja",
         "-DUSE_BACKEND=CUDA", "-DCMAKE_BUILD_TYPE=Release",
-        "-DKATAGO_CUDA_ARCHITECTURES=89",
+        f"-DKATAGO_CUDA_ARCHITECTURES={CUDA_ARCHITECTURE_DIGITS[architecture]}",
         f"-DSM89_FLASH_ATTN_ROOT={paths['prefix'] / 'sources/flash-attention'}",
         f"-DSM89_TACTIC_TILELANG_ROOT={tilelang_root}",
         f"-DSM89_SEARCH_DUAL_FFN_FAT_REGISTRY={dual_manifest['registry_source']}",
@@ -377,8 +406,8 @@ def sm89_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: 
              "--space", str(space), "--binary", str(binary), "--manifests",
              str(dual / "manifest.json"), str(linear / "manifest.json"),
              "--output", str(bundle)], cwd=repo, env=env)
-    ensure_file(binary, "SM89 fat binary")
-    ensure_file(bundle, "SM89 artifact bundle")
+    ensure_file(binary, "SM8x fat binary")
+    ensure_file(bundle, "SM8x artifact bundle")
 
 
 def sm120_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env: dict[str, str]) -> None:
@@ -436,7 +465,7 @@ def sm120_prepare(args: argparse.Namespace, paths: dict[str, pathlib.Path], env:
 
 def workflow_runtime(paths: dict[str, pathlib.Path]) -> tuple[pathlib.Path, pathlib.Path, list[str]]:
     repo, out = paths["repo"], paths["out"]
-    if paths["workflow"].name == "sm89":
+    if paths["workflow"].name in SM8X_WORKFLOWS:
         return (
             out / "build/katago",
             repo / "docs/baseline-configs/bench-cuda-gpu0-4090-s2.cfg",
@@ -465,7 +494,8 @@ def workflow_discovery(
         "--batches", args.batches, "--phase", "discovery",
         "--iterations", str(args.discovery_iterations),
         "--warmup", str(args.warmup), "--repeats", "1",
-        "--min-improvement-fraction", "0.001", "--resume",
+        "--min-improvement-fraction", str(args.min_improvement_fraction),
+        "--resume",
         "--output", str(first_pass),
         "--raw-dir", str(out / "raw-discovery-first-pass"),
     ], cwd=repo, env=env)
@@ -483,7 +513,8 @@ def workflow_discovery(
         "--confirmation-iterations", str(args.refinement_confirmation_iterations),
         "--iterations", str(args.discovery_iterations),
         "--warmup", str(args.warmup), "--repeats", "1",
-        "--min-improvement-fraction", "0.001", "--resume",
+        "--min-improvement-fraction", str(args.min_improvement_fraction),
+        "--resume",
         "--output", str(out / "discovery.json"),
         "--raw-dir", str(out / "raw-discovery-refinement"),
     ], cwd=repo, env=env)
@@ -797,11 +828,17 @@ def main() -> int:
         help="candidate count per family after the first Top-K refinement sweep",
     )
     parser.add_argument(
-        "--refinement-confirmation-iterations", type=int, default=300,
+        "--refinement-confirmation-iterations", type=int,
+        default=MIN_REFINEMENT_CONFIRMATION_ITERATIONS,
         help="timed iterations in each leg of a provisional-winner ABBA check",
     )
     parser.add_argument("--gate-iterations", type=int, default=1000)
-    parser.add_argument("--gate-repeats", type=int, default=2)
+    parser.add_argument("--gate-repeats", type=int, default=MIN_GATE_REPEATS)
+    parser.add_argument(
+        "--min-improvement-fraction", type=float,
+        default=DEFAULT_MIN_IMPROVEMENT_FRACTION,
+        help="minimum paired geometric tactic gain (default: 0.005)",
+    )
     parser.add_argument("--warmup", type=int, default=80)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
@@ -815,8 +852,18 @@ def main() -> int:
         parser.error(
             "--refinement-resweep-top-k must be in [1,--refinement-top-k]"
         )
-    if args.refinement_confirmation_iterations < 100:
-        parser.error("--refinement-confirmation-iterations must be at least 100")
+    if (
+        args.refinement_confirmation_iterations <
+        MIN_REFINEMENT_CONFIRMATION_ITERATIONS
+    ):
+        parser.error(
+            "--refinement-confirmation-iterations must be at least "
+            f"{MIN_REFINEMENT_CONFIRMATION_ITERATIONS}"
+        )
+    if args.gate_repeats < MIN_GATE_REPEATS:
+        parser.error(f"--gate-repeats must be at least {MIN_GATE_REPEATS}")
+    if not 0.0 <= args.min_improvement_fraction < 1.0:
+        parser.error("--min-improvement-fraction must be in [0,1)")
     if args.full_batch_scan and args.phase == "prescan":
         parser.error("--phase prescan cannot be combined with --full-batch-scan")
     script_dir = pathlib.Path(__file__).resolve().parent
@@ -863,7 +910,11 @@ def main() -> int:
     args.batches = ",".join(str(batch) for batch in selected_batches)
     if args.phase == "prescan":
         return 0
-    prepare = sm89_prepare if hardware["workflow"] == "sm89" else sm120_prepare
+    prepare = (
+        sm8x_prepare
+        if hardware["workflow"] in SM8X_WORKFLOWS
+        else sm120_prepare
+    )
     if args.phase in ("prepare", "all"):
         prepare(args, paths, env)
     if args.phase in ("discovery", "all"):

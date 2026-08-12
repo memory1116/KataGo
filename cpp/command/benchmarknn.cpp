@@ -148,6 +148,7 @@ int MainCmds::benchmarknn(const vector<string>& args) {
 
     if(jsonOut) {
       cout << "{";
+      cout << "\"benchmarkMetricSchemaVersion\":2,";
       cout << "\"modelFile\":\"" << jsonEscape(nnEval->getModelFileName()) << "\",";
       cout << "\"modelName\":\"" << jsonEscape(nnEval->getInternalModelName()) << "\",";
       cout << "\"revision\":\"" << jsonEscape(Version::getGitRevisionWithBackend()) << "\",";
@@ -233,6 +234,10 @@ int MainCmds::benchmarknn(const vector<string>& args) {
       cout << "],";
       cout << "\"combinedPerBatchMs\":" << setprecision(10) << result.combinedWallSeconds * 1000.0 << ",";
       cout << "\"combinedNNEvalsPerSec\":" << setprecision(10) << result.combinedNNEvalsPerSec << ",";
+      cout << "\"timedWallNNEvals\":"
+           << (long long)result.numServerThreads * result.batchSize * result.numIterations << ",";
+      cout << "\"timedWallSeconds\":" << setprecision(10) << result.timedWallSeconds << ",";
+      cout << "\"aggregateWallNNEvalsPerSec\":" << setprecision(10) << result.aggregateWallNNEvalsPerSec << ",";
       cout << "\"actualWallSeconds\":" << setprecision(10) << result.actualWallSeconds << ",";
       cout << "\"actualWallPerForwardMs\":" << setprecision(10) << result.actualWallPerForwardMs;
       cout << "}" << endl;
@@ -259,8 +264,11 @@ int MainCmds::benchmarknn(const vector<string>& args) {
       }
       cout << "combined per-batch wall time (max server median): "
            << setprecision(6) << result.combinedWallSeconds * 1000.0 << " ms" << endl;
-      cout << "combined throughput: " << setprecision(10) << result.combinedNNEvalsPerSec
-           << " nnEval/s" << endl;
+      cout << "median-sum throughput diagnostic: " << setprecision(10)
+           << result.combinedNNEvalsPerSec << " nnEval/s" << endl;
+      cout << "aggregate timed-wall throughput: " << setprecision(10)
+           << result.aggregateWallNNEvalsPerSec << " nnEval/s over "
+           << result.timedWallSeconds << " s" << endl;
       cout << "actual wall time across server threads: "
            << setprecision(6) << result.actualWallSeconds << " s ("
            << result.actualWallPerForwardMs << " ms per forward incl. warmup)" << endl;

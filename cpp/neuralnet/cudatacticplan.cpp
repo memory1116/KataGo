@@ -48,6 +48,16 @@ void requireConfigBool(ConfigParser& cfg, const string& key, bool required) {
     );
 }
 
+void requireConfigEnabled(ConfigParser& cfg, const string& key, bool required) {
+  if(!cfg.contains(key))
+    return;
+  const enabled_t value = cfg.getEnabled(key);
+  if((required && value == enabled_t::False) || (!required && value == enabled_t::True))
+    throw StringError(
+      "CUDA tactic plan requires " + key + "=" + (required ? "true" : "false")
+    );
+}
+
 void requireConfigInt(ConfigParser& cfg, const string& key, int required) {
   if(cfg.contains(key) && cfg.getInt(key) != required)
     throw StringError(
@@ -144,6 +154,35 @@ map<string,string> parseTacticOverrides(const json& payload, int batch) {
   return overrides;
 }
 
+map<string,bool> parseRuntimeConfig(const json& target, bool required) {
+  static const set<string> allowedKeys = {
+    "cudaUseFP16",
+    "cudaUseGraphInference",
+    "cudaUseNHWC",
+    "cudaWarmupOnlyMaxBatchSize",
+    "nnBatchAwareDispatch",
+  };
+  if(!target.contains("runtime_config")) {
+    if(required)
+      throw StringError("CUDA tactic plan has no certified runtime execution contract");
+    return map<string,bool>();
+  }
+  const json& config = target["runtime_config"];
+  if(!config.is_object() || config.size() != allowedKeys.size())
+    throw StringError("CUDA tactic plan runtime execution contract is malformed");
+  map<string,bool> result;
+  for(const string& key : allowedKeys) {
+    if(!config.contains(key) || !config[key].is_boolean())
+      throw StringError("CUDA tactic plan runtime execution contract requires boolean " + key);
+    result[key] = config[key].get<bool>();
+  }
+  for(auto iter = config.begin(); iter != config.end(); ++iter) {
+    if(allowedKeys.find(iter.key()) == allowedKeys.end())
+      throw StringError("CUDA tactic plan runtime execution contract contains unknown key " + iter.key());
+  }
+  return result;
+}
+
 void requireSameInt(const string& label, int expected, int actual, int deviceIdx) {
   if(actual != expected) {
     throw StringError(
@@ -219,7 +258,7 @@ unique_ptr<Plan> loadAndApply(
     throw StringError("CUDA tactic plan has no target");
   const json& target = payload["target"];
   const string architecture = requiredString(target,"architecture","target");
-  if(architecture != "sm89" && architecture != "sm120")
+  if(architecture != "sm86" && architecture != "sm89" && architecture != "sm120")
     throw StringError("Unsupported CUDA tactic plan architecture " + architecture);
   if(!target.contains("fixed_board") || target["fixed_board"] != json::array({19,19}))
     throw StringError("CUDA tactic plans currently require an exact 19x19 board");
@@ -241,25 +280,43 @@ unique_ptr<Plan> loadAndApply(
     );
   validateCertifiedBatch(payload,batch);
   map<string,string> tacticOverrides = parseTacticOverrides(payload,batch);
+  const map<string,bool> runtimeConfig = parseRuntimeConfig(target,architecture == "sm86");
+  const bool hasRuntimeConfig = !runtimeConfig.empty();
 
   requireConfigInt(cfg,"nnMaxBatchSize",batch);
   requireConfigBool(cfg,"requireMaxBoardSize",true);
-  requireConfigBool(cfg,"nnBatchAwareDispatch",true);
-  requireConfigBool(cfg,"cudaWarmupOnlyMaxBatchSize",true);
-  if(cfg.contains("useFP16") && cfg.getEnabled("useFP16") == enabled_t::False)
-    throw StringError("CUDA tactic plan requires useFP16=true");
-  if(cfg.contains("cudaUseNHWC") && cfg.getEnabled("cudaUseNHWC") == enabled_t::False)
-    throw StringError("CUDA tactic plan requires cudaUseNHWC=true");
+  if(hasRuntimeConfig) {
+    for(const auto& item : runtimeConfig) {
+      if(item.first == "cudaUseFP16" || item.first == "cudaUseNHWC")
+        requireConfigEnabled(cfg,item.first,item.second);
+      else
+        requireConfigBool(cfg,item.first,item.second);
+    }
+  }
+  else {
+    requireConfigBool(cfg,"nnBatchAwareDispatch",true);
+    requireConfigBool(cfg,"cudaWarmupOnlyMaxBatchSize",true);
+    if(cfg.contains("useFP16") && cfg.getEnabled("useFP16") == enabled_t::False)
+      throw StringError("CUDA tactic plan requires useFP16=true");
+    if(cfg.contains("cudaUseNHWC") && cfg.getEnabled("cudaUseNHWC") == enabled_t::False)
+      throw StringError("CUDA tactic plan requires cudaUseNHWC=true");
+  }
   requireExactNNLen = true;
 
   map<string,string> runtimeOverrides = tacticOverrides;
   runtimeOverrides["nnMaxBatchSize"] = Global::intToString(batch);
   runtimeOverrides["numNNServerThreadsPerModel"] = Global::intToString(evaluatorThreads);
-  runtimeOverrides["nnBatchAwareDispatch"] = "true";
-  runtimeOverrides["cudaWarmupOnlyMaxBatchSize"] = "true";
-  runtimeOverrides["useFP16"] = "true";
-  runtimeOverrides["cudaUseNHWC"] = "true";
-  if(architecture == "sm89") {
+  if(hasRuntimeConfig) {
+    for(const auto& item : runtimeConfig)
+      runtimeOverrides[item.first] = item.second ? "true" : "false";
+  }
+  else {
+    runtimeOverrides["nnBatchAwareDispatch"] = "true";
+    runtimeOverrides["cudaWarmupOnlyMaxBatchSize"] = "true";
+    runtimeOverrides["useFP16"] = "true";
+    runtimeOverrides["cudaUseNHWC"] = "true";
+  }
+  if(architecture == "sm86" || architecture == "sm89") {
     runtimeOverrides["cudaSm89Backend"] = "true";
     runtimeOverrides["cudaSm89Forward"] = "true";
   }

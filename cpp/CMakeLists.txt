@@ -57,6 +57,16 @@ set(SM89_SEARCH_DUAL_FFN_FAT_SOURCES "" CACHE STRING "Semicolon-separated genera
 set(SM89_SEARCH_LINEAR2_FAT_REGISTRY "" CACHE FILEPATH "Generated SM89 linear2 fat registry")
 set(SM89_SEARCH_LINEAR2_FAT_SOURCES "" CACHE STRING "Semicolon-separated generated SM89 linear2 sources")
 set(SM89_CUDA_ARCHITECTURES "" CACHE STRING "Optional CUDA architecture list for an SM89-only search build")
+set(KATAGO_SM8X_CUDA_ARCHITECTURES 89)
+if(KATAGO_CUDA_ARCHITECTURES)
+  set(KATAGO_SM8X_CUDA_ARCHITECTURES ${KATAGO_CUDA_ARCHITECTURES})
+elseif(SM89_CUDA_ARCHITECTURES)
+  set(KATAGO_SM8X_CUDA_ARCHITECTURES ${SM89_CUDA_ARCHITECTURES})
+endif()
+list(LENGTH KATAGO_SM8X_CUDA_ARCHITECTURES KATAGO_SM8X_CUDA_ARCHITECTURE_COUNT)
+if(NOT KATAGO_SM8X_CUDA_ARCHITECTURE_COUNT EQUAL 1)
+  message(FATAL_ERROR "SM8x Flash/tactic targets require exactly one CUDA architecture")
+endif()
 set(KATAGO_TILELANG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/TileLang"
   CACHE PATH "Compatible TileLang package root used by generated CUDA sources")
 set(KATAGO_CUTLASS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/cutlass"
@@ -78,6 +88,17 @@ if(USE_BACKEND STREQUAL "CUDA")
   if(NOT EXISTS "${KATAGO_CUTLASS_ROOT}/include/cutlass/cutlass.h")
     message(FATAL_ERROR
       "KATAGO_CUTLASS_ROOT does not contain CUTLASS headers: ${KATAGO_CUTLASS_ROOT}")
+  endif()
+
+  # Apply an explicit architecture before CUDA compiler detection so that the
+  # cache, compiler probe, target defaults, and architecture-specific object
+  # libraries all describe the same binary.
+  if(KATAGO_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES "${KATAGO_CUDA_ARCHITECTURES}" CACHE STRING
+      "CUDA architectures emitted for this target build" FORCE)
+  elseif(SM89_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES "${SM89_CUDA_ARCHITECTURES}" CACHE STRING
+      "CUDA architectures emitted for this target build" FORCE)
   endif()
 
   enable_language(CUDA)
@@ -237,7 +258,8 @@ if(USE_BACKEND STREQUAL "CUDA")
       neuralnet/cudabackend_sm89_linear2_gemm.cu
       neuralnet/cudabackend_sm89_qkv_rope_gemm.cu
     )
-    set_target_properties(katago_sm89_flash PROPERTIES CUDA_ARCHITECTURES 89 CUDA_STANDARD 17)
+    set_target_properties(katago_sm89_flash PROPERTIES
+      CUDA_ARCHITECTURES ${KATAGO_SM8X_CUDA_ARCHITECTURES} CUDA_STANDARD 17)
     target_include_directories(katago_sm89_flash SYSTEM PRIVATE
       "${SM89_FLASH_ATTN_ROOT}/hopper"
       "${SM89_FLASH_ATTN_ROOT}/csrc/cutlass/include"
@@ -256,6 +278,7 @@ if(USE_BACKEND STREQUAL "CUDA")
       KATAGO_FLASH_BLOCK_N=96
       KATAGO_FLASH_NUM_WARPS=4
       KATAGO_FLASH_PACK_GQA=0
+      KATAGO_SM8X_COMPILED_ARCH=${KATAGO_SM8X_CUDA_ARCHITECTURES}
       NDEBUG
     )
     target_compile_options(katago_sm89_flash PRIVATE
@@ -296,7 +319,7 @@ if(USE_BACKEND STREQUAL "CUDA")
       ${SM89_SEARCH_LINEAR2_FAT_SOURCES}
     )
     set_target_properties(katago_sm89_tactic_search PROPERTIES
-      CUDA_ARCHITECTURES 89 CUDA_STANDARD 17)
+      CUDA_ARCHITECTURES ${KATAGO_SM8X_CUDA_ARCHITECTURES} CUDA_STANDARD 17)
     target_include_directories(katago_sm89_tactic_search PRIVATE
       "${CMAKE_CURRENT_SOURCE_DIR}/neuralnet")
     target_include_directories(katago_sm89_tactic_search SYSTEM PRIVATE

@@ -9,6 +9,19 @@ from python.cuda_tactic_workflow import validate_plan
 REPO = pathlib.Path(__file__).resolve().parents[2]
 MODEL_SHA256 = "1881600caab9e9d85a3dd6a019e9b8e7d2c237b5f984e13ed49a8645be3077c6"
 EXPECTED_PLANS = {
+    "rtx3080ti": {
+        "path": pathlib.Path(
+            "final-migration/plans/sm86/rtx3080ti-b8-s4/best-tactic-plan.json"
+        ),
+        "file_sha256": "933f50fb95fb0857a5f76191046e7b58997c98e235496d92d5a5e7a758ec6ff6",
+        "architecture": "sm86",
+        "gpu_class": "rtx3080ti",
+        "device_name": "NVIDIA GeForce RTX 3080 Ti",
+        "compute_capability": [8, 6],
+        "batch": 8,
+        "streams": 4,
+        "records": 7,
+    },
     "rtx4090d": {
         "path": pathlib.Path(
             "final-migration/plans/sm89/rtx4090d-b12-s2/best-tactic-plan.json"
@@ -19,6 +32,7 @@ EXPECTED_PLANS = {
         "device_name": "NVIDIA GeForce RTX 4090 D",
         "compute_capability": [8, 9],
         "batch": 12,
+        "streams": 2,
         "records": 60,
     },
     "rtx5080": {
@@ -31,6 +45,7 @@ EXPECTED_PLANS = {
         "device_name": "NVIDIA GeForce RTX 5080",
         "compute_capability": [12, 0],
         "batch": 16,
+        "streams": 2,
         "records": 63,
     },
 }
@@ -124,7 +139,7 @@ class CheckedInTacticPlanTests(unittest.TestCase):
                 )
                 self.assertEqual(target["fixed_board"], [19, 19])
                 self.assertEqual(target["precision"], "FP16/NHWC")
-                self.assertEqual(target["streams"], 2)
+                self.assertEqual(target["streams"], expected["streams"])
                 self.assertEqual(target["model_sha256"], MODEL_SHA256)
 
                 closure = plan["positive_history_closure"]

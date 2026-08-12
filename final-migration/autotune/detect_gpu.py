@@ -36,22 +36,17 @@ def main() -> int:
     args = parser.parse_args()
     sys.path.insert(0, str(args.repo / "python"))
     from portable_cuda_device import query_cuda_device
+    from autotune import classify_device
 
     device = query_cuda_device(args.device)
     if args.print_smi_index:
         print(smi_index(device))
         return 0
-    cc = tuple(device["compute_capability"])
-    if cc == (8, 9):
-        workflow = "sm89"
-    elif cc == (12, 0):
-        workflow = "sm120"
-    else:
-        raise SystemExit(
-            f"unsupported CUDA compute capability {cc[0]}.{cc[1]}; "
-            "this bundle supports only SM89 and SM120"
-        )
-    payload = {"schema": 1, "workflow": workflow, "device": device}
+    try:
+        classification = classify_device(device)
+    except RuntimeError as error:
+        raise SystemExit(str(error)) from error
+    payload = {"schema": 1, **classification, "device": device}
     rendered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

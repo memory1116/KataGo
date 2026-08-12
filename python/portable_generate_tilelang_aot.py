@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an exact-batch SM89 TileLang GEMM search candidate.
+"""Generate an exact-batch SM8x TileLang GEMM search candidate.
 
 The candidate must already exist in a portable tactic space. This prevents an
 NCU-inspired one-off from
@@ -20,6 +20,7 @@ import json
 import pathlib
 import platform
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -34,6 +35,7 @@ from portable_fat_scan import (
     launch_symbol as fat_launch_symbol,
     validate_symbol_token,
 )
+from cuda_tactic_workflow import cuda_architecture_guard
 
 
 @tilelang.jit(pass_configs={
@@ -373,6 +375,7 @@ extern "C" const char* portable_search_{family}_id() {{ return "{candidate_id}";
 
 def restrict_generated_kernel_to_architecture(
     source: str, kernel_name: str, architecture: str,
+    compute_capability: object,
 ) -> str:
     """Keep one generated search TU restricted to its target architecture."""
     lines = source.splitlines(keepends=True)
@@ -381,9 +384,11 @@ def restrict_generated_kernel_to_architecture(
         if kernel_name in line and "__global__" in line and line.rstrip().endswith("{")
     )
     end = matching_brace(lines, definition)
-    if architecture != "sm89":
-        raise ValueError(f"this branch only generates sm89, not {architecture}")
-    condition = "__CUDA_ARCH__ >= 890 && __CUDA_ARCH__ < 900"
+    if architecture not in ("sm86", "sm89"):
+        raise ValueError(
+            f"the portable SM8x generator does not support {architecture}"
+        )
+    condition = cuda_architecture_guard(compute_capability)
     lines.insert(definition + 1, f"#if defined(__CUDA_ARCH__) && {condition}\n")
     lines.insert(end + 1, "#endif\n")
     return "".join(lines)
@@ -398,6 +403,10 @@ def main() -> None:
     parser.add_argument("--candidate-id", required=True)
     parser.add_argument("--batch", type=int, required=True)
     parser.add_argument("--device", type=int, required=True)
+    parser.add_argument(
+        "--nvcc", default="nvcc",
+        help="CUDA compiler used for the recorded generation environment",
+    )
     parser.add_argument("--output-dir", required=True)
     parser.add_argument(
         "--source-path",
@@ -484,7 +493,7 @@ def main() -> None:
             "qkv_rope": "wide_qkv_kernel",
             "linear2": "residual_gemm_kernel",
         }[args.family],
-        architecture,
+        architecture, space.get("compute_capability"),
     )
     block_m = int(candidate_value["m"])
     block_n = int(candidate_value["n"])
@@ -512,6 +521,14 @@ def main() -> None:
     source_path.parent.mkdir(parents=True, exist_ok=True)
     metadata_path = output_dir / f"{args.family}-{args.candidate_id}.json"
     source_path.write_text(source, encoding="ascii")
+    nvcc_path = shutil.which(args.nvcc)
+    if nvcc_path is None:
+        raise FileNotFoundError(f"CUDA compiler not found: {args.nvcc}")
+    nvcc_version = subprocess.run(
+        [nvcc_path, "--version"], check=True, text=True,
+        capture_output=True,
+    ).stdout.strip()
+
     metadata = {
         "schema": 1,
         "candidate": candidate_value,
@@ -551,10 +568,8 @@ def main() -> None:
             "device_name": torch.cuda.get_device_name(args.device),
             "compute_capability": actual_capability,
             "pci_bus_id": torch.cuda.get_device_properties(args.device).pci_bus_id,
-            "nvcc": subprocess.run(
-                ["nvcc", "--version"], check=True, text=True,
-                capture_output=True,
-            ).stdout.strip(),
+            "nvcc_path": nvcc_path,
+            "nvcc": nvcc_version,
         },
         "generator_sha256": hashlib.sha256(
             pathlib.Path(__file__).resolve().read_bytes()

@@ -23,6 +23,10 @@ runtime apply mapping.
 
 Current assets:
 
+- `sm86/rtx3080ti-b8-s4/best-tactic-plan.json`: certified RTX 3080 Ti,
+  exact B8, four streams per device, `1504.050501` long-gate physical
+  nnEval/s. Its explicit runtime contract keeps CUDA Graph and batch-aware
+  dispatch disabled, matching the configuration used for certification.
 - `sm89/rtx4090d-b12-s2/best-tactic-plan.json`: certified RTX 4090 D, exact
   B12, two streams per device, `3110.7` long-gate physical nnEval/s.
 - `sm120/rtx5080-b16-s2/best-tactic-plan.json`: certified RTX 5080, exact B16,

@@ -72,7 +72,7 @@ template<typename DeviceGemm>
 class GemmRunnerT final : public GemmRunner {
  public:
   explicit GemmRunnerT(const half* weights_)
-    : weights(weights_), initialized(false) {}
+    : weights(weights_), initializedTokens(-1) {}
 
   bool run(
     const half* input, half* output, int tokens,
@@ -87,14 +87,16 @@ class GemmRunnerT final : public GemmRunner {
       {1.0f, beta}
     );
     cutlass::Status status;
-    if(!initialized) {
+    // update() refreshes pointers/epilogue state but not the GEMM problem
+    // shape. Reinitialize whenever the dynamic search batch changes M.
+    if(initializedTokens != tokens) {
       status = op.can_implement(args);
       if(status != cutlass::Status::kSuccess)
         return false;
       status = op.initialize(args, nullptr, stream);
       if(status != cutlass::Status::kSuccess)
         return false;
-      initialized = true;
+      initializedTokens = tokens;
     }
     else {
       status = op.update(args, nullptr);
@@ -107,7 +109,7 @@ class GemmRunnerT final : public GemmRunner {
  private:
   const half* weights;
   DeviceGemm op;
-  bool initialized;
+  int initializedTokens;
 };
 
 template<
